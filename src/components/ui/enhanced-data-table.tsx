@@ -60,10 +60,10 @@ export interface DataTableConfig<T = DataTableRecord> {
 
   // Data and columns
   data: T[];
-  columns: DataTableColumn<T>[];
+  columns?: DataTableColumn<T>[]; // Optional - will auto-generate if not provided
 
   // Search configuration
-  searchableFields: string[];
+  searchableFields?: string[]; // Optional - will auto-detect if not provided
   searchPlaceholder?: string;
 
   // Filter configuration
@@ -119,13 +119,148 @@ export interface DataTableConfig<T = DataTableRecord> {
   onColumnWidthsChange?: (widths: Record<string, string>) => void;
 }
 
+// ====================== AUTO-GENERATION UTILITIES ======================
+
+// Smart column generator - automatically creates columns from data structure
+const generateColumnsFromData = <T extends DataTableRecord>(data: T[], existingColumns?: DataTableColumn<T>[]): DataTableColumn<T>[] => {
+  if (data.length === 0) return existingColumns || [];
+  
+  const sampleRecord = data[0];
+  const autoColumns: DataTableColumn<T>[] = [];
+  
+  Object.keys(sampleRecord).forEach((key, index) => {
+    // Skip if column already exists
+    if (existingColumns?.some(col => col.key === key)) return;
+    
+    const value = sampleRecord[key];
+    const values = data.slice(0, 10).map(r => r[key]); // Sample first 10 records
+    
+    // Determine column properties based on data type and content
+    const column: DataTableColumn<T> = {
+      key,
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+      enabled: key !== 'id', // Hide ID by default
+      position: index,
+      sortable: true,
+      resizable: true,
+      groupable: typeof value === 'string' || typeof value === 'boolean',
+    };
+    
+    // Set appropriate width based on content
+    if (key === 'id') {
+      column.width = '80px';
+    } else if (typeof value === 'boolean') {
+      column.width = '100px';
+    } else if (typeof value === 'number') {
+      column.width = '120px';
+      column.className = 'text-right';
+    } else if (key.toLowerCase().includes('email')) {
+      column.width = '200px';
+    } else if (key.toLowerCase().includes('name')) {
+      column.width = '180px';
+      column.frozen = true; // Names are often good frozen columns
+    } else if (key.toLowerCase().includes('date')) {
+      column.width = '140px';
+      // Auto-format dates
+      column.render = (value: unknown) => {
+        if (!value) return '';
+        const date = new Date(value as string);
+        return isNaN(date.getTime()) ? String(value) : date.toLocaleDateString();
+      };
+    } else if (typeof value === 'string') {
+      // Estimate width based on content length
+      const maxLength = Math.max(...values.map(v => String(v || '').length));
+      column.width = `${Math.min(Math.max(maxLength * 8 + 40, 120), 300)}px`;
+    }
+    
+    // Auto-render for common field types
+    if (key.toLowerCase().includes('status') && typeof value === 'string') {
+      column.render = (value: unknown) => {
+        const statusColors: Record<string, string> = {
+          active: 'bg-green-100 text-green-800',
+          inactive: 'bg-red-100 text-red-800',
+          pending: 'bg-yellow-100 text-yellow-800',
+          completed: 'bg-blue-100 text-blue-800',
+          draft: 'bg-gray-100 text-gray-800'
+        };
+        const colorClass = statusColors[String(value).toLowerCase()] || 'bg-gray-100 text-gray-800';
+        return React.createElement('span', { 
+          className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}` 
+        }, String(value));
+      };
+    }
+    
+    if (typeof value === 'number' && key.toLowerCase().includes('amount') || key.toLowerCase().includes('price') || key.toLowerCase().includes('salary')) {
+      column.render = (value: unknown) => {
+        return new Intl.NumberFormat('en-US', { 
+          style: 'currency', 
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(Number(value) || 0);
+      };
+    }
+    
+    if (typeof value === 'boolean') {
+      column.render = (value: unknown) => {
+        return React.createElement('span', { 
+          className: `inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+            value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          }` 
+        }, value ? 'Yes' : 'No');
+      };
+    }
+    
+    autoColumns.push(column);
+  });
+  
+  return [...(existingColumns || []), ...autoColumns];
+};
+
+// Smart filter generator - automatically creates filters from data
+const generateFiltersFromData = <T extends DataTableRecord>(data: T[], columns: DataTableColumn<T>[]): DataTableFilter[] => {
+  if (data.length === 0) return [];
+  
+  const filters: DataTableFilter[] = [];
+  
+  columns.forEach(column => {
+    const values = data.map(r => r[column.key]).filter(v => v != null);
+    const uniqueValues = [...new Set(values.map(v => String(v)))];
+    
+    // Only create filters for columns with reasonable number of unique values
+    if (uniqueValues.length > 1 && uniqueValues.length <= 20) {
+      if (typeof data[0][column.key] === 'string' || typeof data[0][column.key] === 'boolean') {
+        filters.push({
+          key: column.key,
+          label: column.label,
+          type: 'multi-select',
+          searchable: uniqueValues.length > 5,
+          statusColors: column.key.toLowerCase().includes('status'),
+          options: uniqueValues.sort().map(value => ({
+            value: String(value),
+            label: String(value),
+            color: column.key.toLowerCase().includes('status') ? (
+              value.toLowerCase() === 'active' ? 'green' :
+              value.toLowerCase() === 'inactive' ? 'red' :
+              value.toLowerCase() === 'pending' ? 'yellow' :
+              'gray'
+            ) : undefined
+          }))
+        });
+      }
+    }
+  });
+  
+  return filters;
+};
+
 // ====================== ENHANCED DATA TABLE COMPONENT ======================
 
 const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   tableId,
   data,
-  columns: initialColumns,
-  searchableFields,
+  columns: initialColumns = [], // Default to empty array for auto-generation
+  searchableFields = [], // Default to empty array for auto-detection
   searchPlaceholder = "Search...",
   filters = [],
   activeFilters = {},
@@ -171,7 +306,73 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [filterSearchTerms, setFilterSearchTerms] = useState<Record<string, string>>({});
   const [selectAllPages, setSelectAllPages] = useState(false);
-  const [columns, setColumns] = useState<DataTableColumn<T>[]>(initialColumns);
+  
+  // Internal filter state management when not controlled externally
+  const [internalActiveFilters, setInternalActiveFilters] = useState<Record<string, string[]>>({});
+  const effectiveActiveFilters = activeFilters && Object.keys(activeFilters).length > 0 ? activeFilters : internalActiveFilters;
+  
+  const handleInternalFilterChange = useCallback((filterKey: string, values: string[]) => {
+    if (onFilterChange) {
+      onFilterChange(filterKey, values);
+    } else {
+      setInternalActiveFilters(prev => ({
+        ...prev,
+        [filterKey]: values
+      }));
+    }
+  }, [onFilterChange]);
+  
+  const handleInternalClearAllFilters = useCallback(() => {
+    if (onClearAllFilters) {
+      onClearAllFilters();
+    } else {
+      setInternalActiveFilters({});
+    }
+  }, [onClearAllFilters]);
+  // Auto-generate columns if none or minimal columns provided
+  const autoGeneratedColumns = useMemo(() => {
+    if (initialColumns.length === 0 && data.length > 0) {
+      console.log('🤖 Auto-generating columns from data structure');
+      return generateColumnsFromData(data);
+    }
+    if (initialColumns.length > 0 && data.length > 0) {
+      // Enhance existing columns with auto-generated ones for missing fields
+      return generateColumnsFromData(data, initialColumns);
+    }
+    return initialColumns;
+  }, [data, initialColumns]);
+
+  const [columns, setColumns] = useState<DataTableColumn<T>[]>(autoGeneratedColumns);
+
+  // Update columns when auto-generated columns change
+  useEffect(() => {
+    setColumns(autoGeneratedColumns);
+  }, [autoGeneratedColumns]);
+
+  // Auto-detect searchable fields if not provided
+  const effectiveSearchableFields = useMemo(() => {
+    if (searchableFields.length > 0) return searchableFields;
+    
+    // Auto-detect searchable fields from columns
+    return columns
+      .filter(col => {
+        const sampleValue = data[0]?.[col.key];
+        return typeof sampleValue === 'string' && 
+               !col.key.toLowerCase().includes('id') &&
+               col.enabled;
+      })
+      .map(col => col.key)
+      .slice(0, 5); // Limit to first 5 string fields
+  }, [searchableFields, columns, data]);
+
+  // Auto-generate filters if none provided
+  const effectiveFilters = useMemo(() => {
+    if (filters.length > 0) return filters;
+    if (data.length === 0) return [];
+    
+    console.log('🤖 Auto-generating filters from data structure');
+    return generateFiltersFromData(data, columns);
+  }, [filters, data, columns]);
 
   // ====================== COLUMN RESIZING STATE ======================
   const [columnWidths, setColumnWidths] = useState<Record<string, string>>(() => {
@@ -280,18 +481,18 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
       const recordToFilter = enableGrouping ? (record as T & GroupedRecord).originalRecord || record : record;
       
       // Search filter
-      const matchesSearch = searchQuery === '' || searchableFields.some(field => 
+      const matchesSearch = searchQuery === '' || effectiveSearchableFields.some(field => 
         String(recordToFilter[field]).toLowerCase().includes(searchQuery.toLowerCase())
       );
 
       // Active filters
-      const matchesFilters = Object.entries(activeFilters).every(([key, values]) => {
+      const matchesFilters = Object.entries(effectiveActiveFilters).every(([key, values]) => {
         if (values.length === 0) return true;
         return values.includes(String(recordToFilter[key]));
       });
       return matchesSearch && matchesFilters;
     });
-  }, [data, groupedData, enableGrouping, searchQuery, searchableFields, activeFilters]);
+  }, [data, groupedData, enableGrouping, searchQuery, effectiveSearchableFields, effectiveActiveFilters]);
 
   // Sort data
   const sortedData = useMemo(() => {
@@ -534,7 +735,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
       <Input placeholder={searchPlaceholder} className="pl-9 w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
     </div>;
-  const filtersButton = filters.length > 0 && <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+  const filtersButton = effectiveFilters.length > 0 && <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="gap-2 bg-[#0097ee] hover:bg-[#0097ee]/90 text-white border-[#0097ee]">
           <Filter className="h-4 w-4" /> 
@@ -544,7 +745,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
       <PopoverContent className="w-80 bg-white z-50" align="end">
         <div className="space-y-4">
           <h4 className="font-medium leading-none">Filters</h4>
-          {filters.map(filter => <div key={filter.key} className="space-y-2">
+          {effectiveFilters.map(filter => <div key={filter.key} className="space-y-2">
               <label className="text-sm font-medium">{filter.label}</label>
               {filter.type === 'multi-select' && filter.options && <div className="space-y-1">
                   {filter.searchable && <Input placeholder={`Search ${filter.label.toLowerCase()}...`} value={filterSearchTerms[filter.key] || ''} onChange={e => setFilterSearchTerms(prev => ({
@@ -553,15 +754,13 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
             }))} className="text-sm" />}
                   <div className="max-h-40 overflow-y-auto space-y-1">
                     {filter.options.filter(option => !filter.searchable || !filterSearchTerms[filter.key] || option.label.toLowerCase().includes(filterSearchTerms[filter.key].toLowerCase())).map(option => <div key={option.value} className="flex items-center space-x-2">
-                          <Checkbox id={`${filter.key}-${option.value}`} checked={activeFilters[filter.key]?.includes(option.value) || false} onCheckedChange={(checked: boolean) => {
-                  if (onFilterChange) {
-                    const current = activeFilters[filter.key] || [];
+                          <Checkbox id={`${filter.key}-${option.value}`} checked={effectiveActiveFilters[filter.key]?.includes(option.value) || false} onCheckedChange={(checked: boolean) => {
+                    const current = effectiveActiveFilters[filter.key] || [];
                     if (checked) {
-                      onFilterChange(filter.key, [...current, option.value]);
+                      handleInternalFilterChange(filter.key, [...current, option.value]);
                     } else {
-                      onFilterChange(filter.key, current.filter(v => v !== option.value));
+                      handleInternalFilterChange(filter.key, current.filter(v => v !== option.value));
                     }
-                  }
                 }} />
                           <label htmlFor={`${filter.key}-${option.value}`} className="text-sm cursor-pointer flex items-center gap-2">
                             {filter.statusColors && option.color && <Badge className={`${option.color} text-xs`}>
@@ -575,7 +774,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
             </div>)}
           <div className="flex justify-between">
             <Button variant="outline" size="sm" onClick={() => {
-            onClearAllFilters?.();
+            handleInternalClearAllFilters();
             setFilterSearchTerms({});
           }}>
               Clear All

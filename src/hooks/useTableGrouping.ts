@@ -11,13 +11,65 @@ export interface GroupedRecord {
 }
 
 export interface GroupSummary {
-  totalExpected: number;
-  totalActual: number;
-  totalVacancy: number;
-  fillRate: string;
-  status: string;
   recordCount: number;
+  [key: string]: any; // Allow additional computed properties
 }
+
+// Default auto-summary calculator that works with any data structure
+const createAutoSummaryCalculator = <T extends Record<string, any>>(records: T[]): GroupSummary => {
+  const summary: GroupSummary = {
+    recordCount: records.length
+  };
+
+  if (records.length === 0) return summary;
+
+  // Automatically detect and calculate numeric aggregations
+  const firstRecord = records[0];
+  Object.keys(firstRecord).forEach(key => {
+    const values = records.map(r => r[key]).filter(v => v != null);
+    
+    if (values.length === 0) return;
+    
+    // Handle numeric fields
+    if (typeof firstRecord[key] === 'number') {
+      const numbers = values.filter(v => typeof v === 'number') as number[];
+      if (numbers.length > 0) {
+        summary[`total_${key}`] = numbers.reduce((sum, val) => sum + val, 0);
+        summary[`avg_${key}`] = Math.round(summary[`total_${key}`] / numbers.length * 100) / 100;
+        summary[`min_${key}`] = Math.min(...numbers);
+        summary[`max_${key}`] = Math.max(...numbers);
+      }
+    }
+    
+    // Handle status/string fields - count occurrences
+    if (typeof firstRecord[key] === 'string') {
+      const statusCounts = values.reduce((acc, val) => {
+        const strVal = String(val);
+        acc[strVal] = (acc[strVal] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Add individual status counts with safe property names
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        const safeKey = `count_${key}_${status.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        summary[safeKey] = count;
+      });
+      
+      // Add most common value
+      const mostCommon = Object.entries(statusCounts).reduce((a, b) => (a[1] as number) > (b[1] as number) ? a : b);
+      summary[`most_common_${key}`] = mostCommon[0];
+    }
+    
+    // Handle boolean fields
+    if (typeof firstRecord[key] === 'boolean') {
+      const boolValues = values.filter(v => typeof v === 'boolean') as boolean[];
+      summary[`count_${key}_true`] = boolValues.filter(v => v).length;
+      summary[`count_${key}_false`] = boolValues.filter(v => !v).length;
+    }
+  });
+
+  return summary;
+};
 
 export const useTableGrouping = <T extends Record<string, any>>(
   data: T[],
@@ -63,7 +115,8 @@ export const useTableGrouping = <T extends Record<string, any>>(
     const result: (T & GroupedRecord)[] = [];
 
     Object.entries(groups).forEach(([groupKey, records]) => {
-      const groupSummary = summaryCalculator ? summaryCalculator(records) : null;
+      // Use custom calculator if provided, otherwise use auto-calculator
+      const groupSummary = summaryCalculator ? summaryCalculator(records) : createAutoSummaryCalculator(records);
       
       // Add group header
       result.push({
