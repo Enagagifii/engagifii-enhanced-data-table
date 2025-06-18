@@ -31,8 +31,7 @@
     "demo:browse": "open http://localhost:3001 || start http://localhost:3001 || xdg-open http://localhost:3001",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "prepare": "npm run build"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "keywords": [
     "react",
@@ -49,18 +48,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/engagifii/enhanced-data-table.git"
+    "url": "https://github.com/Enagagifii/engagifii-enhanced-data-table.git"
   },
   "bugs": {
-    "url": "https://github.com/engagifii/enhanced-data-table/issues"
+    "url": "https://github.com/Enagagifii/engagifii-enhanced-data-table/issues"
   },
-  "homepage": "https://github.com/engagifii/enhanced-data-table#readme",
+  "homepage": "https://github.com/Enagagifii/engagifii-enhanced-data-table#readme",
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@engagifii/enhanced-data-table": "git+ssh://github-engagifii/Enagagifii/engagifii-enhanced-data-table.git",
     "@hello-pangea/dnd": "^16.5.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
