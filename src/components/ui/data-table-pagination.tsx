@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious, PaginationLink, PaginationEllipsis } from "@/components/ui/pagination";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious, PaginationLink, PaginationEllipsis } from "./pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { Input } from "./input";
+import { Button } from "./button";
 
 interface DataTablePaginationProps {
   currentPage: number;

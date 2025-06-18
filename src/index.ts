@@ -1,5 +1,7 @@
 // Main enhanced data table component
 export { default as EnhancedDataTable } from './components/ui/enhanced-data-table';
+export { default as SimpleDataTable } from './components/ui/simple-data-table';
+export { default as AdvancedDataTableDemo } from './components/ui/advanced-data-table-demo';
 
 // Individual UI components
 export { Button, buttonVariants } from './components/ui/button';

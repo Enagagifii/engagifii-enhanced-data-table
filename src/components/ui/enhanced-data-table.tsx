@@ -1,24 +1,23 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Button } from "./button";
+import { Input } from "./input";
+import { Checkbox } from "./checkbox";
+import { Badge } from "./badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuGroup } from "./dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { ScrollArea, ScrollBar } from "./scroll-area";
 import { Search, Filter, FileText, Maximize, Minimize, ChevronDown, Bell, FileDown, FileSpreadsheet, Settings, MoreHorizontal, Columns, Pin, Group, ChevronRight } from 'lucide-react';
 import { SortableTableHeader, SortConfig } from './sortable-table';
 import ColumnConfigurator from './column-configurator';
 import DataTablePagination from './data-table-pagination';
-import { useTableGrouping, type GroupedRecord } from '@/hooks/useTableGrouping';
-import { GroupableTableRow } from '@/components/ui/groupable-table-row';
+import { useTableGrouping, type GroupedRecord } from '../../hooks/useTableGrouping';
+import { GroupableTableRow } from './groupable-table-row';
 
 // ====================== TYPE DEFINITIONS ======================
 
-export type DataTableRecord = Record<string, unknown> & {
+type DataTableRecord = Record<string, unknown> & {
   id: string;
 };
-
 export interface DataTableColumn<T = DataTableRecord> {
   key: string;
   label: string;
@@ -30,11 +29,10 @@ export interface DataTableColumn<T = DataTableRecord> {
   frozen?: boolean;
   sortable?: boolean;
   resizable?: boolean;
-  groupable?: boolean;
+  groupable?: boolean; // New: Allow grouping by this column
   render?: (value: unknown, record: T) => React.ReactNode;
   className?: string;
 }
-
 export interface DataTableFilter {
   key: string;
   label: string;
@@ -47,7 +45,6 @@ export interface DataTableFilter {
     color?: string;
   }[];
 }
-
 export interface DataTableBulkAction {
   key: string;
   label: string;
@@ -57,7 +54,6 @@ export interface DataTableBulkAction {
   onClick: (selectedIds: string[]) => void;
   requiresSelection?: boolean;
 }
-
 export interface DataTableConfig<T = DataTableRecord> {
   // Table identification
   tableId: string;
@@ -121,9 +117,6 @@ export interface DataTableConfig<T = DataTableRecord> {
   onRowClick?: (record: T) => void;
   onColumnsChange?: (columns: DataTableColumn<T>[]) => void;
   onColumnWidthsChange?: (widths: Record<string, string>) => void;
-
-  // Generic item name for pagination
-  itemName?: string;
 }
 
 // ====================== ENHANCED DATA TABLE COMPONENT ======================
@@ -168,8 +161,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   customToolbar: CustomToolbar,
   onRowClick,
   onColumnsChange,
-  onColumnWidthsChange,
-  itemName = "records"
+  onColumnWidthsChange
 }: DataTableConfig<T>) => {
   // ====================== STATE MANAGEMENT ======================
 
@@ -185,9 +177,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   const [columnWidths, setColumnWidths] = useState<Record<string, string>>(() => {
     const initialWidths: Record<string, string> = {};
     initialColumns.forEach(col => {
-      if (col.width) {
-        initialWidths[col.key] = col.width;
-      }
+      initialWidths[col.key] = col.width || '140px';
     });
     return initialWidths;
   });
@@ -234,7 +224,15 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   // Calculate total table width
   const totalTableWidth = useMemo(() => {
     if (isFullScreen) {
-      return '100%';
+      // In fullscreen, calculate the actual width needed vs viewport width
+      const checkboxWidth = enableSelection ? 48 : 0;
+      const actionWidth = rowActions ? 64 : 0;
+      const minDataColumnsWidth = enabledColumns.length * 120; // Minimum 120px per column
+      const minTotalWidth = checkboxWidth + actionWidth + minDataColumnsWidth + 50;
+      const viewportWidth = Math.max(window.innerWidth - 100, 1400);
+
+      // Use the larger of minimum required width or viewport width
+      return Math.max(minTotalWidth, viewportWidth);
     }
     const checkboxWidth = enableSelection ? 48 : 0;
     const actionWidth = rowActions ? 64 : 0;
@@ -248,23 +246,830 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
     if (!isFullScreen) {
       return getColumnWidth(key);
     }
-    // In fullscreen, distribute width evenly among visible columns
-    const totalColumns = enabledColumns.length + (enableSelection ? 1 : 0) + (rowActions ? 1 : 0);
-    return `${100 / totalColumns}%`;
-  }, [isFullScreen, getColumnWidth, enableSelection, rowActions, enabledColumns.length]);
 
-  // This is a placeholder for the actual implementation
-  // The full component would continue with filtering, sorting, pagination logic, etc.
+    // In fullscreen mode, distribute available width among columns
+    const fixedWidth = (enableSelection ? 48 : 0) + (rowActions ? 64 : 0);
+    const availableWidth = totalTableWidth - fixedWidth - 50; // Account for borders and padding
 
-  return (
-    <div className="enhanced-data-table">
-      <p>Enhanced Data Table Component - Implementation in progress</p>
-      <p>Configured for: {itemName}</p>
-      <p>Total records: {data.length}</p>
-      <p>Columns: {enabledColumns.length}</p>
-      {enableGrouping && groupBy && <p>Grouped by: {groupBy}</p>}
-    </div>
-  );
+    // For checkbox and actions, use fixed width
+    if (key === 'checkbox') return '48px';
+    if (key === 'actions') return '64px';
+
+    // For data columns, try to distribute evenly but respect minimum widths
+    const dataColumns = enabledColumns.length;
+    const distributedWidth = Math.floor(availableWidth / dataColumns);
+    const originalWidth = parseInt(getColumnWidth(key));
+
+    // Use the larger of distributed width or original width, with a minimum of 120px
+    const columnWidth = Math.max(distributedWidth, originalWidth, 120);
+    return `${columnWidth}px`;
+  }, [isFullScreen, getColumnWidth, enableSelection, rowActions, enabledColumns.length, totalTableWidth]);
+
+  // Filter and search data
+  const filteredData = useMemo(() => {
+    // Use grouped data if grouping is enabled, otherwise use original data
+    const sourceData = enableGrouping ? groupedData : data;
+    
+    return sourceData.filter(record => {
+      // Skip filtering group headers - they should always be visible
+      if (enableGrouping && (record as T & GroupedRecord).isGroupHeader) {
+        return true;
+      }
+      
+      // For grouped data, filter based on original record
+      const recordToFilter = enableGrouping ? (record as T & GroupedRecord).originalRecord || record : record;
+      
+      // Search filter
+      const matchesSearch = searchQuery === '' || searchableFields.some(field => 
+        String(recordToFilter[field]).toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      // Active filters
+      const matchesFilters = Object.entries(activeFilters).every(([key, values]) => {
+        if (values.length === 0) return true;
+        return values.includes(String(recordToFilter[key]));
+      });
+      return matchesSearch && matchesFilters;
+    });
+  }, [data, groupedData, enableGrouping, searchQuery, searchableFields, activeFilters]);
+
+  // Sort data
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+    
+    // Don't sort when grouping is enabled - preserve group structure
+    if (enableGrouping) {
+      return filteredData;
+    }
+    
+    return [...filteredData].sort((a, b) => {
+      const aVal = a[sortConfig.key] as any;
+      const bVal = b[sortConfig.key] as any;
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredData, sortConfig, enableGrouping]);
+
+  // Paginate data with enhanced grouping support
+  const totalPages = useMemo(() => {
+    const dataLength = sortedData.length;
+    if (dataLength === 0) {
+      // During grouping transitions, ensure we always have at least 1 page
+      return enableGrouping ? 1 : 0;
+    }
+    return Math.ceil(dataLength / rowsPerPage);
+  }, [sortedData.length, rowsPerPage, enableGrouping]);
+  
+  // Ensure current page is within bounds - smart adjustment for grouping
+  const adjustedCurrentPage = useMemo(() => {
+    if (totalPages === 0) return 1;
+    if (currentPage > totalPages) {
+      // If current page exceeds total pages, go to last page
+      return totalPages;
+    }
+    return currentPage;
+  }, [currentPage, totalPages]);
+  
+  // Use adjusted page for pagination
+  const paginatedData = enablePagination ? sortedData.slice((adjustedCurrentPage - 1) * rowsPerPage, adjustedCurrentPage * rowsPerPage) : sortedData;
+  
+  // Sync the adjusted page back to the parent if it changed
+  useEffect(() => {
+    if (adjustedCurrentPage !== currentPage && onPageChange) {
+      onPageChange(adjustedCurrentPage);
+    }
+  }, [adjustedCurrentPage, currentPage, onPageChange]);
+
+  // Calculate dynamic height
+  const tableBodyHeight = useMemo(() => {
+    if (!dynamicHeight) return maxHeight;
+
+    // In fullscreen mode, allow table to expand to fit all rows without vertical scroll
+    if (isFullScreen) {
+      const dataRowsCount = paginatedData.length || 1;
+      const frozenRowsHeight = frozenRowIds.length * rowHeight;
+      return dataRowsCount * rowHeight + frozenRowsHeight;
+    }
+    const dataRowsCount = paginatedData.length || 1;
+    const calculatedHeight = dataRowsCount * rowHeight;
+    return Math.min(Math.max(calculatedHeight, minHeight), maxHeight);
+  }, [dynamicHeight, paginatedData.length, rowHeight, minHeight, maxHeight, isFullScreen, frozenRowIds.length]);
+
+  // ====================== SCROLL SYNCHRONIZATION ======================
+
+  const headerScrollRef = useRef<HTMLDivElement>(null);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
+  const syncHorizontalScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (isScrollingRef.current) return;
+    const sourceElement = e.currentTarget;
+    const scrollLeft = sourceElement.scrollLeft;
+    isScrollingRef.current = true;
+
+    // Sync scroll positions between header and body containers
+    if (sourceElement === headerScrollRef.current && bodyScrollRef.current) {
+      bodyScrollRef.current.scrollLeft = scrollLeft;
+    } else if (sourceElement === bodyScrollRef.current && headerScrollRef.current) {
+      headerScrollRef.current.scrollLeft = scrollLeft;
+    }
+
+    // Reset flag after a brief delay
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 10);
+  }, []);
+
+  // ====================== COLUMN RESIZING HANDLERS ======================
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, columnKey: string) => {
+    console.log('🔧 Resize start:', columnKey, 'clientX:', e.clientX);
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setIsResizing(true);
+    setResizingColumn(columnKey);
+    resizeStartX.current = e.clientX;
+    resizeStartWidth.current = parseInt(getColumnWidth(columnKey)) || 140;
+    
+    // console.log('🔧 Initial width:', resizeStartWidth.current);
+    
+    // Force update the cursor immediately
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    
+    // Add event listeners
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!columnKey) return;
+      
+      const deltaX = moveEvent.clientX - resizeStartX.current;
+      const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
+      
+      // console.log('🔧 Resize move:', columnKey, 'deltaX:', deltaX, 'newWidth:', newWidth);
+      
+      const newWidths = {
+        ...columnWidths,
+        [columnKey]: `${newWidth}px`
+      };
+      
+      setColumnWidths(newWidths);
+      onColumnWidthsChange?.(newWidths);
+    };
+    
+    const handleMouseUp = () => {
+      // console.log('🔧 Resize end:', columnKey);
+      
+      setIsResizing(false);
+      setResizingColumn(null);
+      
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [getColumnWidth, columnWidths, onColumnWidthsChange]);
+
+  const handleToggleFrozenColumn = useCallback((columnKey: string, checked: boolean) => {
+    setExperimentalFrozenColumns(prev => {
+      if (checked) {
+        // Enforce maximum of 2 frozen columns
+        if (prev.length >= 2) {
+          return [prev[1], columnKey]; // Replace oldest with newest
+        }
+        return [...prev, columnKey];
+      } else {
+        return prev.filter(key => key !== columnKey);
+      }
+    });
+  }, []);
+  const handleClearFrozenColumns = useCallback(() => {
+    setExperimentalFrozenColumns([]);
+  }, []);
+  const handleToggleFrozenRow = useCallback((rowId: string, checked: boolean) => {
+    setFrozenRowIds(prev => {
+      if (checked) {
+        // Enforce maximum of 2 frozen rows
+        if (prev.length >= 2) {
+          return [prev[1], rowId]; // Replace oldest with newest
+        }
+        return [...prev, rowId];
+      } else {
+        return prev.filter(id => id !== rowId);
+      }
+    });
+  }, []);
+
+  // ====================== EVENT HANDLERS ======================
+
+  const handleSort = useCallback((key: string) => {
+    const newSortConfig = {
+      key,
+      direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+    } as SortConfig;
+    setSortConfig(newSortConfig);
+    onSortChange?.(newSortConfig);
+  }, [sortConfig, onSortChange]);
+  const handleSelectRow = useCallback((id: string, checked: boolean) => {
+    let newSelection: string[];
+    if (checked) {
+      newSelection = [...selectedRows, id];
+    } else {
+      newSelection = selectedRows.filter(rowId => rowId !== id);
+      setSelectAllPages(false);
+    }
+    onSelectionChange?.(newSelection);
+  }, [selectedRows, onSelectionChange]);
+  const handleSelectAllCurrent = useCallback((checked: boolean) => {
+    if (checked) {
+      const currentPageIds = paginatedData.map(record => record.id);
+      onSelectionChange?.(currentPageIds);
+    } else {
+      onSelectionChange?.([]);
+      setSelectAllPages(false);
+    }
+  }, [paginatedData, onSelectionChange]);
+  const handleSelectAllPages = useCallback(() => {
+    const allIds = sortedData.map(record => record.id);
+    onSelectionChange?.(allIds);
+    setSelectAllPages(true);
+  }, [sortedData, onSelectionChange]);
+  const handleColumnsChange = useCallback((newColumns: DataTableColumn<T>[]) => {
+    setColumns(newColumns);
+    onColumnsChange?.(newColumns);
+  }, [onColumnsChange]);
+
+  // ====================== SELECTION STATE ======================
+
+  const areAllCurrentPageSelected = paginatedData.length > 0 && paginatedData.every(record => selectedRows.includes(record.id));
+  const selectionCount = selectAllPages ? sortedData.length : selectedRows.length;
+
+  // ====================== HELPER FUNCTIONS ======================
+
+  const getColumnStyle = useCallback((column: DataTableColumn<T>, index: number, isFrozen: boolean) => {
+    const isExperimentallyFrozen = experimentalFrozenColumns.includes(column.key);
+    const baseStyle = {
+      width: getActualColumnWidth(column.key),
+      minWidth: isFullScreen ? 'auto' : getColumnWidth(column.key),
+      maxWidth: isFullScreen ? 'none' : getColumnWidth(column.key)
+    };
+    if (isFrozen) {
+      const leftPosition = enableSelection ? 48 + frozenColumns.slice(0, index).reduce((acc, col) => acc + parseInt(getActualColumnWidth(col.key)), 0) : frozenColumns.slice(0, index).reduce((acc, col) => acc + parseInt(getActualColumnWidth(col.key)), 0);
+      return {
+        ...baseStyle,
+        left: `${leftPosition}px`,
+        backgroundColor: isExperimentallyFrozen ? '#f8fafc' : 'white',
+        // Subtle tint for experimental columns
+        borderRight: isExperimentallyFrozen ? '2px solid #e2e8f0' : '1px solid #e5e7eb'
+      };
+    }
+    return baseStyle;
+  }, [experimentalFrozenColumns, enableSelection, frozenColumns, getActualColumnWidth, isFullScreen, getColumnWidth]);
+
+  // ====================== TOOLBAR COMPONENTS ======================
+
+  const searchBar = <div className="relative w-96">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <Input placeholder={searchPlaceholder} className="pl-9 w-full" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+    </div>;
+  const filtersButton = filters.length > 0 && <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="gap-2 bg-[#0097ee] hover:bg-[#0097ee]/90 text-white border-[#0097ee]">
+          <Filter className="h-4 w-4" /> 
+          Filters
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 bg-white z-50" align="end">
+        <div className="space-y-4">
+          <h4 className="font-medium leading-none">Filters</h4>
+          {filters.map(filter => <div key={filter.key} className="space-y-2">
+              <label className="text-sm font-medium">{filter.label}</label>
+              {filter.type === 'multi-select' && filter.options && <div className="space-y-1">
+                  {filter.searchable && <Input placeholder={`Search ${filter.label.toLowerCase()}...`} value={filterSearchTerms[filter.key] || ''} onChange={e => setFilterSearchTerms(prev => ({
+              ...prev,
+              [filter.key]: e.target.value
+            }))} className="text-sm" />}
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {filter.options.filter(option => !filter.searchable || !filterSearchTerms[filter.key] || option.label.toLowerCase().includes(filterSearchTerms[filter.key].toLowerCase())).map(option => <div key={option.value} className="flex items-center space-x-2">
+                          <Checkbox id={`${filter.key}-${option.value}`} checked={activeFilters[filter.key]?.includes(option.value) || false} onCheckedChange={(checked: boolean) => {
+                  if (onFilterChange) {
+                    const current = activeFilters[filter.key] || [];
+                    if (checked) {
+                      onFilterChange(filter.key, [...current, option.value]);
+                    } else {
+                      onFilterChange(filter.key, current.filter(v => v !== option.value));
+                    }
+                  }
+                }} />
+                          <label htmlFor={`${filter.key}-${option.value}`} className="text-sm cursor-pointer flex items-center gap-2">
+                            {filter.statusColors && option.color && <Badge className={`${option.color} text-xs`}>
+                                {option.label}
+                              </Badge>}
+                            {(!filter.statusColors || !option.color) && option.label}
+                          </label>
+                        </div>)}
+                  </div>
+                </div>}
+            </div>)}
+          <div className="flex justify-between">
+            <Button variant="outline" size="sm" onClick={() => {
+            onClearAllFilters?.();
+            setFilterSearchTerms({});
+          }}>
+              Clear All
+            </Button>
+            <Button size="sm" className="bg-[#0097ee] hover:bg-[#0097ee]/90" onClick={() => setIsFilterOpen(false)}>
+              Apply
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>;
+  const actionsDropdown = bulkActions.length > 0 && <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">
+          Actions ({selectionCount}) <ChevronDown className="h-4 w-4 ml-1" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {bulkActions.map((action, index) => <DropdownMenuItem key={action.key} className="flex items-center gap-2" disabled={action.requiresSelection !== false && selectionCount === 0} onClick={() => action.onClick(selectAllPages ? sortedData.map(r => r.id) : selectedRows)}>
+            {action.icon && <action.icon className="h-4 w-4" />}
+            <span>{action.label}</span>
+          </DropdownMenuItem>)}
+        
+        <DropdownMenuSeparator />
+        
+        {/* Grouping Feature */}
+        {enableGrouping && (
+          <DropdownMenuGroup>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
+                <Group className="h-4 w-4" />
+                <span>Group By</span>
+                {groupBy && <Badge variant="secondary" className="ml-auto text-xs">
+                  {enabledColumns.find(col => col.key === groupBy)?.label || groupBy}
+                </Badge>}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" side="right">
+                <DropdownMenuLabel className="text-xs">
+                  Group data by column
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {/* No grouping option */}
+                <DropdownMenuCheckboxItem 
+                  checked={!groupBy} 
+                  onCheckedChange={() => onGroupByChange?.(null)}
+                >
+                  No Grouping
+                </DropdownMenuCheckboxItem>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Groupable columns */}
+                {enabledColumns
+                  .filter(column => column.groupable !== false)
+                  .map(column => (
+                    <DropdownMenuCheckboxItem 
+                      key={column.key}
+                      checked={groupBy === column.key} 
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          onGroupByChange?.(column.key);
+                        } else {
+                          onGroupByChange?.(null);
+                        }
+                      }}
+                    >
+                      {column.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                
+                {groupBy && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={expandAllGroups}>
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Expand All Groups
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={collapseAllGroups}>
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                      Collapse All Groups
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </DropdownMenuGroup>
+        )}
+        
+        {/* Column Freezing Feature - Available in All Modes */}
+        <DropdownMenuGroup>
+          
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
+              <Columns className="h-4 w-4" />
+              <span>Freeze Columns</span>
+              {experimentalFrozenColumns.length > 0 && <Badge variant="secondary" className="ml-auto text-xs">
+                  {experimentalFrozenColumns.length}
+                </Badge>}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" side="right">
+              <DropdownMenuLabel className="text-xs">
+                Select up to 2 columns to freeze
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              {enabledColumns.map(column => <DropdownMenuCheckboxItem key={column.key} checked={experimentalFrozenColumns.includes(column.key)} onCheckedChange={checked => handleToggleFrozenColumn(column.key, checked)} disabled={!experimentalFrozenColumns.includes(column.key) && experimentalFrozenColumns.length >= 2}>
+                  {column.label}
+                </DropdownMenuCheckboxItem>)}
+              
+              {experimentalFrozenColumns.length > 0 && <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleClearFrozenColumns}>
+                    Clear Frozen Columns
+                  </DropdownMenuItem>
+                </>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Row Freezing Feature - Only Available in Fullscreen Mode */}
+          {isFullScreen && <DropdownMenuGroup>
+              
+              
+              
+              
+              <DropdownMenu>
+                
+                
+              </DropdownMenu>
+            </DropdownMenuGroup>}
+        </DropdownMenuGroup>
+
+        {enableColumnConfiguration && <>
+            <DropdownMenuSeparator />
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
+                <Settings className="h-4 w-4" />
+                <span>Configure Columns</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-auto p-0" side="right">
+                <ColumnConfigurator columns={columns} onChange={handleColumnsChange} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>}
+      </DropdownMenuContent>
+    </DropdownMenu>;
+  const fullScreenToggle = enableFullScreen && <Button variant="outline" onClick={() => setIsFullScreen(!isFullScreen)} className="gap-2" title={isFullScreen ? "Exit full screen" : "Enter full screen"}>
+      {isFullScreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+    </Button>;
+
+  // ====================== RENDER TABLE ======================
+
+  const renderTableContent = () => <div className="flex flex-col h-full">
+      {/* Toolbar */}
+      <div className="flex-shrink-0 space-y-4 bg-white">
+        {CustomToolbar ? <CustomToolbar selectedCount={selectionCount} searchBar={searchBar} filtersButton={filtersButton} actionsDropdown={actionsDropdown} fullScreenToggle={fullScreenToggle} columns={columns} onColumnsChange={handleColumnsChange} /> : <div className="flex items-center justify-between p-1 bg-gray-50 border-b border-gray-200 gap-2">
+            <div className="flex items-center gap-4 mx-0 my-1">
+              {actionsDropdown}
+              {searchBar}
+            </div>
+            <div className="flex items-center gap-2">
+              {filtersButton}
+              {fullScreenToggle}
+            </div>
+          </div>}
+
+        {/* Select all pages banner */}
+        {areAllCurrentPageSelected && !selectAllPages && enableSelectAllPages && sortedData.length > paginatedData.length && <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between">
+            <span className="text-sm text-blue-700">
+              All {paginatedData.length} items on this page are selected.
+            </span>
+            <Button variant="link" className="text-[#0097ee] hover:text-[#0097ee]/80 p-0 h-auto" onClick={handleSelectAllPages}>
+              Select all {sortedData.length} items across all pages
+            </Button>
+          </div>}
+
+        {selectAllPages && <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-center justify-between">
+            <span className="text-sm text-blue-700">
+              All {sortedData.length} items across all pages are selected.
+            </span>
+            <Button variant="link" className="text-[#0097ee] hover:text-[#0097ee]/80 p-0 h-auto" onClick={() => {
+          onSelectionChange?.([]);
+          setSelectAllPages(false);
+        }}>
+              Clear selection
+            </Button>
+          </div>}
+
+        {/* Pagination */}
+        {enablePagination && <DataTablePagination currentPage={adjustedCurrentPage} totalPages={totalPages} filteredCount={sortedData.length} rowsPerPage={rowsPerPage} onPageChange={onPageChange || (() => {})} onRowsPerPageChange={onRowsPerPageChange || (() => {})} />}
+      </div>
+
+      {/* Table */}
+      <div className={isFullScreen ? "flex-1" : "flex-1 min-h-0"}>
+        <div className="border border-gray-200 rounded-md overflow-hidden flex flex-col">
+          {/* Fixed Header */}
+          <div className={`bg-white border-b border-gray-200 flex-shrink-0 ${isFullScreen && freezeHeaderRow ? 'sticky top-0 z-50' : ''}`}>
+            <div ref={headerScrollRef} className="overflow-y-hidden overflow-x-auto" style={{
+            height: '48px'
+          }} onScroll={syncHorizontalScroll}>
+              <div style={{
+              minWidth: `${totalTableWidth}px`,
+              width: isFullScreen ? `${totalTableWidth}px` : 'max-content'
+            }}>
+                <table className={`w-full border-collapse ${isFullScreen ? 'table-fixed' : ''}`} style={{
+                width: '100%'
+              }}>
+                  <thead>
+                    <tr className="h-12">
+                      {/* Selection checkbox */}
+                      {enableSelection && <th className="sticky left-0 bg-white z-40 border-r border-gray-200 px-3 text-left font-medium text-muted-foreground text-sm" style={{
+                      width: '48px',
+                      minWidth: '48px',
+                      maxWidth: '48px'
+                    }}>
+                          <Checkbox checked={areAllCurrentPageSelected} onCheckedChange={handleSelectAllCurrent} />
+                        </th>}
+
+                      {/* Frozen columns */}
+                      {frozenColumns.map((column, index) => <th key={column.key} className={`relative sticky bg-white z-30 border-r border-gray-200 px-3 py-2 text-left font-medium text-muted-foreground text-sm ${experimentalFrozenColumns.includes(column.key) ? 'bg-slate-50' : ''}`} style={getColumnStyle(column, index, true)}>
+                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleSort(column.key)}>
+                            {column.label}
+                            {experimentalFrozenColumns.includes(column.key) && <Pin className="h-3 w-3 text-blue-500" />}
+                            {sortConfig.key === column.key && <span className="text-xs">
+                                {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                              </span>}
+                          </div>
+                          {/* Resize handle */}
+                          {(column.resizable !== false) && (
+                            <div
+                              className={`absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${
+                                isResizing && resizingColumn === column.key 
+                                  ? 'bg-blue-500 opacity-100' 
+                                  : 'bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100'
+                              }`}
+                              onMouseDown={(e) => {
+                                console.log('🔧 Frozen resize handle mousedown:', column.key);
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleResizeStart(e, column.key);
+                              }}
+                              onClick={(e) => {
+                                console.log('🔧 Frozen resize handle click:', column.key);
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }}
+                              onMouseEnter={() => console.log('🔧 Frozen resize handle hover:', column.key)}
+                              title="Drag to resize column"
+                            />
+                          )}
+                        </th>)}
+
+                      {/* Scrollable columns */}
+                      {scrollableColumns.map(column => <th key={column.key} className="relative border-r border-gray-200 px-3 py-2 text-left font-medium text-muted-foreground text-sm" style={getColumnStyle(column, 0, false)}>
+                          <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleSort(column.key)}>
+                            {column.label}
+                            {sortConfig.key === column.key && <span className="text-xs">
+                                {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                              </span>}
+                          </div>
+                          {/* Resize handle */}
+                          {(column.resizable !== false) && (
+                            <div
+                              className={`absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${
+                                isResizing && resizingColumn === column.key 
+                                  ? 'bg-blue-500 opacity-100' 
+                                  : 'bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100'
+                              }`}
+                              onMouseDown={(e) => {
+                                console.log('🔧 Scrollable resize handle mousedown:', column.key);
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleResizeStart(e, column.key);
+                              }}
+                              onClick={(e) => {
+                                console.log('🔧 Scrollable resize handle click:', column.key);
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }}
+                              onMouseEnter={() => console.log('🔧 Scrollable resize handle hover:', column.key)}
+                              title="Drag to resize column"
+                            />
+                          )}
+                        </th>)}
+
+                      {/* Row actions column */}
+                      {rowActions && <th className="border-r border-gray-200 px-3 text-left font-medium text-muted-foreground text-sm" style={{
+                      width: '64px',
+                      minWidth: '64px',
+                      maxWidth: '64px'
+                    }}>
+                          Actions
+                        </th>}
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Scrollable Body */}
+          <div ref={bodyScrollRef} className="flex-1 min-h-0 overflow-auto" style={{
+          height: isFullScreen ? 'auto' : dynamicHeight ? `${tableBodyHeight}px` : `${maxHeight}px`,
+          maxHeight: isFullScreen ? 'none' : `${maxHeight}px`
+        }} onScroll={syncHorizontalScroll}>
+            <div style={{
+            minWidth: `${totalTableWidth}px`,
+            width: isFullScreen ? `${totalTableWidth}px` : 'max-content'
+          }}>
+              <table className={`w-full border-collapse ${isFullScreen ? 'table-fixed' : ''}`} style={{
+              width: '100%'
+            }}>
+                <tbody>
+                  {/* Frozen Rows - Only in Fullscreen Mode */}
+                  {isFullScreen && frozenRowIds.length > 0 && <>
+                      {frozenRowIds.map((frozenId, frozenIndex) => {
+                    const frozenRecord = paginatedData.find(record => record.id === frozenId);
+                    if (!frozenRecord) return null;
+                    return <tr key={`frozen-${frozenRecord.id}`} className={`sticky bg-blue-50 border-b-2 border-blue-200 cursor-pointer h-12 text-sm text-muted-foreground z-20`} style={{
+                      top: `${48 + frozenIndex * rowHeight}px`
+                    }} onClick={() => onRowClick?.(frozenRecord)}>
+                            {/* Selection checkbox */}
+                            {enableSelection && <td className="sticky left-0 bg-blue-50 z-30 border-r border-gray-200 px-3" style={{
+                        width: '48px',
+                        minWidth: '48px',
+                        maxWidth: '48px'
+                      }} onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-1">
+                                  <Checkbox checked={selectedRows.includes(frozenRecord.id)} onCheckedChange={(checked: boolean) => handleSelectRow(frozenRecord.id, checked)} />
+                                  <Pin className="h-3 w-3 text-blue-500" />
+                                </div>
+                              </td>}
+
+                            {/* Frozen columns */}
+                            {frozenColumns.map((column, index) => <td key={column.key} className={`sticky bg-blue-50 z-20 border-r border-gray-200 px-3 whitespace-nowrap overflow-hidden text-ellipsis text-sm ${experimentalFrozenColumns.includes(column.key) ? 'bg-slate-50' : ''} ${column.className || ''}`} style={getColumnStyle(column, index, true)}>
+                                {column.render ? column.render(frozenRecord[column.key], frozenRecord) : String(frozenRecord[column.key] ?? '')}
+                              </td>)}
+
+                            {/* Scrollable columns */}
+                            {scrollableColumns.map(column => <td key={column.key} className={`bg-blue-50 border-r border-gray-100 px-3 whitespace-nowrap overflow-hidden text-ellipsis text-sm ${column.className || ''}`} style={getColumnStyle(column, 0, false)}>
+                                {column.render ? column.render(frozenRecord[column.key], frozenRecord) : String(frozenRecord[column.key] ?? '')}
+                              </td>)}
+
+                            {/* Row actions */}
+                            {rowActions && <td className="bg-blue-50 border-r border-gray-100 px-3" style={{
+                        width: '64px',
+                        minWidth: '64px',
+                        maxWidth: '64px'
+                      }} onClick={e => e.stopPropagation()}>
+                                {rowActions(frozenRecord)}
+                              </td>}
+                          </tr>;
+                  })}
+                    </>}
+
+                  {/* Regular Data Rows */}
+                  {paginatedData.length > 0 ? paginatedData.filter(record => !frozenRowIds.includes(record.id)) // Exclude frozen rows from regular display
+                .map(record => {
+                  const typedRecord = record as T & GroupedRecord;
+                  
+                  // Handle grouped rows
+                  if (enableGrouping && typedRecord.isGroupHeader) {
+                    const totalColumns = (enableSelection ? 1 : 0) + enabledColumns.length + (rowActions ? 1 : 0);
+                    
+                    return (
+                      <tr key={record.id} className="bg-gray-50 hover:bg-gray-100 border-b border-gray-200">
+                        {/* Selection checkbox with expand/collapse button */}
+                        {enableSelection && <td className="sticky left-0 bg-gray-50 z-20 border-r border-gray-200 px-3 py-2" style={{
+                          width: '48px',
+                          minWidth: '48px',
+                          maxWidth: '48px'
+                        }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => toggleGroup(typedRecord.groupKey!)}
+                          >
+                            {expandedGroups.has(typedRecord.groupKey!) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </td>}
+
+                        {/* Group header with colspan to merge across all data columns */}
+                        <td 
+                          colSpan={enabledColumns.length + (rowActions ? 1 : 0)} 
+                          className="bg-gray-50 border-r border-gray-100 px-3 py-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {/* Expand/collapse button if no selection column */}
+                              {!enableSelection && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => toggleGroup(typedRecord.groupKey!)}
+                                >
+                                  {expandedGroups.has(typedRecord.groupKey!) ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              <div className="font-semibold text-gray-900 text-sm">
+                                {typedRecord.groupName} ({typedRecord.groupSummary?.recordCount || 0} items)
+                              </div>
+                            </div>
+                            {/* Group summary stats */}
+                            {typedRecord.groupSummary && (
+                              <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <span>Total: {typedRecord.groupSummary.recordCount}</span>
+                                {typedRecord.groupSummary.totalInvoiceAmount && (
+                                  <span>Amount: ${typedRecord.groupSummary.totalInvoiceAmount.toLocaleString()}</span>
+                                )}
+                                {typedRecord.groupSummary.totalAmount && (
+                                  <span>Amount: ${typedRecord.groupSummary.totalAmount.toLocaleString()}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  // Handle regular data rows (including child rows in groups)
+                  return (
+                    <tr key={record.id} className={`hover:bg-muted/50 border-b border-gray-100 cursor-pointer h-12 text-sm text-muted-foreground ${
+                      enableGrouping && !typedRecord.isGroupHeader ? 'pl-4' : ''
+                    }`} onClick={() => onRowClick?.(record)}>
+                      {/* Selection checkbox */}
+                      {enableSelection && <td className={`sticky left-0 bg-white z-20 border-r border-gray-200 px-3 ${
+                        enableGrouping && !typedRecord.isGroupHeader ? 'pl-8' : ''
+                      }`} style={{
+                        width: '48px',
+                        minWidth: '48px',
+                        maxWidth: '48px'
+                      }} onClick={e => e.stopPropagation()}>
+                        <Checkbox checked={selectedRows.includes(record.id)} onCheckedChange={(checked: boolean) => handleSelectRow(record.id, checked)} />
+                      </td>}
+
+                      {/* Frozen columns */}
+                      {frozenColumns.map((column, index) => <td key={column.key} className={`sticky bg-white z-10 border-r border-gray-200 px-3 whitespace-nowrap overflow-hidden text-ellipsis text-sm ${experimentalFrozenColumns.includes(column.key) ? 'bg-slate-50' : ''} ${column.className || ''}`} style={getColumnStyle(column, index, true)}>
+                        {column.render ? column.render(record[column.key], record) : String(record[column.key] ?? '')}
+                      </td>)}
+
+                      {/* Scrollable columns */}
+                      {scrollableColumns.map((column, colIdx) => <td key={column.key} className={`border-r border-gray-100 px-3 whitespace-nowrap overflow-hidden text-ellipsis text-sm ${column.className || ''}`} style={getColumnStyle(column, colIdx, false)}>
+                        {column.render ? column.render(record[column.key], record) : String(record[column.key] ?? '')}
+                      </td>)}
+
+                      {/* Row actions */}
+                      {rowActions && <td className="border-r border-gray-100 px-3" style={{
+                        width: '64px',
+                        minWidth: '64px',
+                        maxWidth: '64px'
+                      }} onClick={e => e.stopPropagation()}>
+                        {rowActions(record)}
+                      </td>}
+                    </tr>
+                  );
+                }) : <tr>
+                      <td colSpan={(enableSelection ? 1 : 0) + enabledColumns.length + (rowActions ? 1 : 0)} className="text-center py-8 text-muted-foreground text-sm">
+                        {emptyState || "No data found matching your criteria"}
+                      </td>
+                    </tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Pagination */}
+      {enablePagination && <div className="flex-shrink-0 mt-4 bg-white">
+          <DataTablePagination currentPage={adjustedCurrentPage} totalPages={totalPages} filteredCount={sortedData.length} rowsPerPage={rowsPerPage} onPageChange={onPageChange || (() => {})} onRowsPerPageChange={onRowsPerPageChange || (() => {})} />
+        </div>}
+    </div>;
+
+  // ====================== RENDER COMPONENT ======================
+
+  if (isFullScreen) {
+    return <div className="fixed inset-0 bg-white z-50 overflow-auto p-4">
+        {renderTableContent()}
+      </div>;
+  }
+  return <div className="container mx-auto h-full">
+      {renderTableContent()}
+    </div>;
 };
-
 export default EnhancedDataTable;

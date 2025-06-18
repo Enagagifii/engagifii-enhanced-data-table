@@ -1,7 +1,7 @@
 {
   "name": "@engagifii/enhanced-data-table",
   "version": "1.0.0",
-  "description": "A comprehensive, feature-rich data table component with advanced filtering, sorting, pagination, grouping, and column management capabilities",
+  "description": "A comprehensive, feature-rich data table component with advanced filtering, sorting, pagination, grouping, frozen columns, bulk actions, and custom cell rendering. Includes comprehensive demo showcasing all enterprise-grade features.",
   "private": false,
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -26,6 +26,9 @@
     "build": "tsup",
     "build:watch": "tsup --watch",
     "dev": "tsup --watch",
+    "demo": "cd demo && (python -m http.server 3001 || python3 -m http.server 3001)",
+    "demo:open": "npm run demo &",
+    "demo:browse": "open http://localhost:3001 || start http://localhost:3001 || xdg-open http://localhost:3001",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
