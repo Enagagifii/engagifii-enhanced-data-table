@@ -54,6 +54,15 @@ export interface DataTableBulkAction {
   onClick: (selectedIds: string[]) => void;
   requiresSelection?: boolean;
 }
+
+export interface GroupingConfig {
+  enabled: boolean;
+  showDropdown?: boolean;
+  position?: 'toolbar' | 'filters' | 'next-to-filters' | 'top';
+  options?: string[];
+  defaultGroupBy?: string | null;
+  summaryCalculator?: (records: any[]) => Record<string, unknown>;
+}
 export interface DataTableConfig<T = DataTableRecord> {
   // Table identification
   tableId: string;
@@ -97,7 +106,14 @@ export interface DataTableConfig<T = DataTableRecord> {
   enableFullScreen?: boolean;
   enableColumnConfiguration?: boolean;
   
-  // Grouping configuration
+  // Grouping configuration - NEW IMPROVED API
+  grouping?: boolean | 'auto' | GroupingConfig;
+  showGroupingDropdown?: boolean; // Built-in UI control
+  groupingDropdownPosition?: 'toolbar' | 'filters' | 'next-to-filters' | 'top';
+  groupingOptions?: string[] | 'auto'; // Fields that can be grouped by
+  defaultGroupBy?: string | 'auto'; // Initial grouping
+  
+  // Legacy grouping API (for backward compatibility)
   enableGrouping?: boolean;
   groupBy?: string | null;
   onGroupByChange?: (groupBy: string | null) => void;
@@ -254,6 +270,195 @@ const generateFiltersFromData = <T extends DataTableRecord>(data: T[], columns: 
   return filters;
 };
 
+// Smart grouping options generator - automatically detects groupable fields
+const generateGroupingOptionsFromData = <T extends DataTableRecord>(data: T[], columns: DataTableColumn<T>[]): string[] => {
+  if (data.length === 0) return [];
+  
+  const groupableFields: string[] = [];
+  
+  columns.forEach(column => {
+    // Only consider enabled columns that are marked as groupable
+    if (!column.enabled || !column.groupable) return;
+    
+    const values = data.map(r => r[column.key]).filter(v => v != null);
+    const uniqueValues = [...new Set(values)];
+    
+    // Good grouping fields have:
+    // 1. Reasonable number of unique values (not too many, not too few)
+    // 2. String or boolean type (categorical data)
+    // 3. At least 2 unique values
+    if (uniqueValues.length >= 2 && uniqueValues.length <= Math.max(10, data.length / 5)) {
+      const firstValue = values[0];
+      if (typeof firstValue === 'string' || typeof firstValue === 'boolean') {
+        groupableFields.push(column.key);
+      }
+    }
+  });
+  
+  // Sort by priority - common grouping fields first
+  return groupableFields.sort((a, b) => {
+    const priority = (field: string) => {
+      const lower = field.toLowerCase();
+      if (lower.includes('status')) return 1;
+      if (lower.includes('department')) return 2;
+      if (lower.includes('position') || lower.includes('role')) return 3;
+      if (lower.includes('type') || lower.includes('category')) return 4;
+      if (lower.includes('location')) return 5;
+      return 10;
+    };
+    return priority(a) - priority(b);
+  });
+};
+
+// Smart default grouping detector
+const detectDefaultGroupBy = <T extends DataTableRecord>(data: T[], options: string[]): string | null => {
+  if (options.length === 0) return null;
+  
+  // Prefer status fields as default grouping
+  const statusField = options.find(field => field.toLowerCase().includes('status'));
+  if (statusField) return statusField;
+  
+  // Then department
+  const deptField = options.find(field => field.toLowerCase().includes('department'));
+  if (deptField) return deptField;
+  
+  // Finally, just use the first option
+  return options[0];
+};
+
+// Parse grouping configuration into a normalized format
+const parseGroupingConfig = <T extends DataTableRecord>(
+  data: T[],
+  columns: DataTableColumn<T>[],
+  config: boolean | 'auto' | GroupingConfig | undefined,
+  showGroupingDropdown?: boolean,
+  groupingDropdownPosition?: string,
+  groupingOptions?: string[] | 'auto',
+  defaultGroupBy?: string | 'auto'
+): GroupingConfig => {
+  // Handle disabled state
+  if (config === false || config === undefined) {
+    return { enabled: false };
+  }
+  
+  // Auto-generate configuration
+  if (config === true || config === 'auto') {
+    const autoOptions = generateGroupingOptionsFromData(data, columns);
+    const autoDefault = defaultGroupBy === 'auto' 
+      ? detectDefaultGroupBy(data, autoOptions)
+      : defaultGroupBy || detectDefaultGroupBy(data, autoOptions);
+    
+    return {
+      enabled: autoOptions.length > 0,
+      showDropdown: showGroupingDropdown !== false,
+      position: (groupingDropdownPosition as any) || 'toolbar',
+      options: groupingOptions === 'auto' ? autoOptions : (groupingOptions || autoOptions),
+      defaultGroupBy: autoDefault || undefined
+    };
+  }
+  
+  // Use provided configuration
+  return {
+    enabled: config.enabled,
+    showDropdown: config.showDropdown !== false,
+    position: config.position || 'toolbar',
+    options: config.options || generateGroupingOptionsFromData(data, columns),
+    defaultGroupBy: config.defaultGroupBy || detectDefaultGroupBy(data, config.options || []),
+    summaryCalculator: config.summaryCalculator
+  };
+};
+
+// ====================== GROUPING SELECTOR COMPONENT ======================
+
+interface GroupingSelectorProps<T = DataTableRecord> {
+  groupingConfig: GroupingConfig;
+  columns: DataTableColumn<T>[];
+  currentGroupBy: string | null;
+  onGroupByChange: (groupBy: string | null) => void;
+  expandAllGroups?: () => void;
+  collapseAllGroups?: () => void;
+}
+
+const GroupingSelector = <T extends DataTableRecord = DataTableRecord>({
+  groupingConfig,
+  columns,
+  currentGroupBy,
+  onGroupByChange,
+  expandAllGroups,
+  collapseAllGroups
+}: GroupingSelectorProps<T>) => {
+  if (!groupingConfig.enabled || !groupingConfig.showDropdown) return null;
+
+  const groupableColumns = columns.filter(col => 
+    groupingConfig.options?.includes(col.key) || 
+    (groupingConfig.options?.length === 0 && col.groupable !== false)
+  );
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Group className="h-4 w-4" />
+          <span>Group By</span>
+          {currentGroupBy && (
+            <Badge variant="secondary" className="text-xs">
+              {columns.find(col => col.key === currentGroupBy)?.label || currentGroupBy}
+            </Badge>
+          )}
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56">
+        <DropdownMenuLabel className="text-xs">
+          Group data by column
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        {/* No grouping option */}
+        <DropdownMenuCheckboxItem 
+          checked={!currentGroupBy} 
+          onCheckedChange={() => onGroupByChange(null)}
+        >
+          No Grouping
+        </DropdownMenuCheckboxItem>
+        
+        <DropdownMenuSeparator />
+        
+        {/* Groupable columns */}
+        {groupableColumns.map(column => (
+          <DropdownMenuCheckboxItem 
+            key={column.key}
+            checked={currentGroupBy === column.key} 
+            onCheckedChange={(checked) => {
+              if (checked) {
+                onGroupByChange(column.key);
+              } else {
+                onGroupByChange(null);
+              }
+            }}
+          >
+            {column.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+        
+        {currentGroupBy && expandAllGroups && collapseAllGroups && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={expandAllGroups}>
+              <ChevronDown className="h-4 w-4 mr-2" />
+              Expand All Groups
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={collapseAllGroups}>
+              <ChevronRight className="h-4 w-4 mr-2" />
+              Collapse All Groups
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 // ====================== ENHANCED DATA TABLE COMPONENT ======================
 
 const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
@@ -284,6 +489,15 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   rowActions,
   enableFullScreen = true,
   enableColumnConfiguration = true,
+  
+  // New improved grouping API
+  grouping,
+  showGroupingDropdown,
+  groupingDropdownPosition,
+  groupingOptions,
+  defaultGroupBy,
+  
+  // Legacy grouping API (backward compatibility)
   enableGrouping = false,
   groupBy = null,
   onGroupByChange,
@@ -393,6 +607,37 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   const [frozenRowIds, setFrozenRowIds] = useState<string[]>([]);
 
   // ====================== GROUPING INTEGRATION ======================
+  
+  // Parse and normalize grouping configuration
+  const groupingConfig = useMemo(() => {
+    return parseGroupingConfig(
+      data,
+      columns,
+      grouping,
+      showGroupingDropdown,
+      groupingDropdownPosition,
+      groupingOptions,
+      defaultGroupBy
+    );
+  }, [data, columns, grouping, showGroupingDropdown, groupingDropdownPosition, groupingOptions, defaultGroupBy]);
+  
+  // Internal grouping state management
+  const [internalGroupBy, setInternalGroupBy] = useState<string | null>(
+    groupingConfig.defaultGroupBy || null
+  );
+  
+  // Determine effective grouping state (controlled vs uncontrolled)
+  const effectiveGroupBy = onGroupByChange ? groupBy : internalGroupBy;
+  const effectiveEnableGrouping = groupingConfig.enabled || enableGrouping;
+  
+  const handleGroupByChange = useCallback((newGroupBy: string | null) => {
+    if (onGroupByChange) {
+      onGroupByChange(newGroupBy);
+    } else {
+      setInternalGroupBy(newGroupBy);
+    }
+  }, [onGroupByChange]);
+  
   const {
     groupedData,
     expandedGroups,
@@ -402,8 +647,8 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
     groupCount
   } = useTableGrouping(
     data,
-    enableGrouping ? groupBy : null,
-    groupSummaryCalculator
+    effectiveEnableGrouping ? effectiveGroupBy : null,
+    groupingConfig.summaryCalculator || groupSummaryCalculator
   );
 
   // ====================== COMPUTED VALUES ======================
@@ -469,16 +714,16 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   // Filter and search data
   const filteredData = useMemo(() => {
     // Use grouped data if grouping is enabled, otherwise use original data
-    const sourceData = enableGrouping ? groupedData : data;
+    const sourceData = effectiveEnableGrouping ? groupedData : data;
     
     return sourceData.filter(record => {
       // Skip filtering group headers - they should always be visible
-      if (enableGrouping && (record as T & GroupedRecord).isGroupHeader) {
+      if (effectiveEnableGrouping && (record as T & GroupedRecord).isGroupHeader) {
         return true;
       }
       
       // For grouped data, filter based on original record
-      const recordToFilter = enableGrouping ? (record as T & GroupedRecord).originalRecord || record : record;
+      const recordToFilter = effectiveEnableGrouping ? (record as T & GroupedRecord).originalRecord || record : record;
       
       // Search filter
       const matchesSearch = searchQuery === '' || effectiveSearchableFields.some(field => 
@@ -492,14 +737,14 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
       });
       return matchesSearch && matchesFilters;
     });
-  }, [data, groupedData, enableGrouping, searchQuery, effectiveSearchableFields, effectiveActiveFilters]);
+  }, [data, groupedData, effectiveEnableGrouping, searchQuery, effectiveSearchableFields, effectiveActiveFilters]);
 
   // Sort data
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return filteredData;
     
     // Don't sort when grouping is enabled - preserve group structure
-    if (enableGrouping) {
+    if (effectiveEnableGrouping) {
       return filteredData;
     }
     
@@ -510,17 +755,17 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
       if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [filteredData, sortConfig, enableGrouping]);
+  }, [filteredData, sortConfig, effectiveEnableGrouping]);
 
   // Paginate data with enhanced grouping support
   const totalPages = useMemo(() => {
     const dataLength = sortedData.length;
     if (dataLength === 0) {
       // During grouping transitions, ensure we always have at least 1 page
-      return enableGrouping ? 1 : 0;
+      return effectiveEnableGrouping ? 1 : 0;
     }
     return Math.ceil(dataLength / rowsPerPage);
-  }, [sortedData.length, rowsPerPage, enableGrouping]);
+  }, [sortedData.length, rowsPerPage, effectiveEnableGrouping]);
   
   // Ensure current page is within bounds - smart adjustment for grouping
   const adjustedCurrentPage = useMemo(() => {
@@ -800,15 +1045,15 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
         
         <DropdownMenuSeparator />
         
-        {/* Grouping Feature */}
-        {enableGrouping && (
+        {/* Legacy Grouping Feature - only show if not using new API */}
+        {(enableGrouping && !groupingConfig.enabled) && (
           <DropdownMenuGroup>
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm">
                 <Group className="h-4 w-4" />
                 <span>Group By</span>
-                {groupBy && <Badge variant="secondary" className="ml-auto text-xs">
-                  {enabledColumns.find(col => col.key === groupBy)?.label || groupBy}
+                {effectiveGroupBy && <Badge variant="secondary" className="ml-auto text-xs">
+                  {enabledColumns.find(col => col.key === effectiveGroupBy)?.label || effectiveGroupBy}
                 </Badge>}
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" side="right">
@@ -819,8 +1064,8 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                 
                 {/* No grouping option */}
                 <DropdownMenuCheckboxItem 
-                  checked={!groupBy} 
-                  onCheckedChange={() => onGroupByChange?.(null)}
+                  checked={!effectiveGroupBy} 
+                  onCheckedChange={() => handleGroupByChange(null)}
                 >
                   No Grouping
                 </DropdownMenuCheckboxItem>
@@ -833,12 +1078,12 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                   .map(column => (
                     <DropdownMenuCheckboxItem 
                       key={column.key}
-                      checked={groupBy === column.key} 
+                      checked={effectiveGroupBy === column.key} 
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          onGroupByChange?.(column.key);
+                          handleGroupByChange(column.key);
                         } else {
-                          onGroupByChange?.(null);
+                          handleGroupByChange(null);
                         }
                       }}
                     >
@@ -846,7 +1091,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                     </DropdownMenuCheckboxItem>
                   ))}
                 
-                {groupBy && (
+                {effectiveGroupBy && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={expandAllGroups}>
@@ -929,14 +1174,61 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   // ====================== RENDER TABLE ======================
 
   const renderTableContent = () => <div className="flex flex-col h-full">
+      {/* Grouping Control - Top Position */}
+      {groupingConfig.position === 'top' && (
+        <div className="flex-shrink-0 p-2 bg-white border-b border-gray-200">
+          <GroupingSelector
+            groupingConfig={groupingConfig}
+            columns={enabledColumns}
+            currentGroupBy={effectiveGroupBy}
+            onGroupByChange={handleGroupByChange}
+            expandAllGroups={expandAllGroups}
+            collapseAllGroups={collapseAllGroups}
+          />
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex-shrink-0 space-y-4 bg-white">
         {CustomToolbar ? <CustomToolbar selectedCount={selectionCount} searchBar={searchBar} filtersButton={filtersButton} actionsDropdown={actionsDropdown} fullScreenToggle={fullScreenToggle} columns={columns} onColumnsChange={handleColumnsChange} /> : <div className="flex items-center justify-between p-1 bg-gray-50 border-b border-gray-200 gap-2">
             <div className="flex items-center gap-4 mx-0 my-1">
               {actionsDropdown}
               {searchBar}
+              {/* Grouping Control - Next to Filters Position */}
+              {groupingConfig.position === 'next-to-filters' && (
+                <GroupingSelector
+                  groupingConfig={groupingConfig}
+                  columns={enabledColumns}
+                  currentGroupBy={effectiveGroupBy}
+                  onGroupByChange={handleGroupByChange}
+                  expandAllGroups={expandAllGroups}
+                  collapseAllGroups={collapseAllGroups}
+                />
+              )}
             </div>
             <div className="flex items-center gap-2">
+              {/* Grouping Control - Toolbar Position (with filters) */}
+              {groupingConfig.position === 'toolbar' && (
+                <GroupingSelector
+                  groupingConfig={groupingConfig}
+                  columns={enabledColumns}
+                  currentGroupBy={effectiveGroupBy}
+                  onGroupByChange={handleGroupByChange}
+                  expandAllGroups={expandAllGroups}
+                  collapseAllGroups={collapseAllGroups}
+                />
+              )}
+              {/* Grouping Control - Filters Position (same as toolbar but explicitly positioned) */}
+              {groupingConfig.position === 'filters' && (
+                <GroupingSelector
+                  groupingConfig={groupingConfig}
+                  columns={enabledColumns}
+                  currentGroupBy={effectiveGroupBy}
+                  onGroupByChange={handleGroupByChange}
+                  expandAllGroups={expandAllGroups}
+                  collapseAllGroups={collapseAllGroups}
+                />
+              )}
               {filtersButton}
               {fullScreenToggle}
             </div>
@@ -1137,7 +1429,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                   const typedRecord = record as T & GroupedRecord;
                   
                   // Handle grouped rows
-                  if (enableGrouping && typedRecord.isGroupHeader) {
+                  if (effectiveEnableGrouping && typedRecord.isGroupHeader) {
                     const totalColumns = (enableSelection ? 1 : 0) + enabledColumns.length + (rowActions ? 1 : 0);
                     
                     return (
@@ -1209,11 +1501,11 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                   // Handle regular data rows (including child rows in groups)
                   return (
                     <tr key={record.id} className={`hover:bg-muted/50 border-b border-gray-100 cursor-pointer h-12 text-sm text-muted-foreground ${
-                      enableGrouping && !typedRecord.isGroupHeader ? 'pl-4' : ''
+                      effectiveEnableGrouping && !typedRecord.isGroupHeader ? 'pl-4' : ''
                     }`} onClick={() => onRowClick?.(record)}>
                       {/* Selection checkbox */}
                       {enableSelection && <td className={`sticky left-0 bg-white z-20 border-r border-gray-200 px-3 ${
-                        enableGrouping && !typedRecord.isGroupHeader ? 'pl-8' : ''
+                        effectiveEnableGrouping && !typedRecord.isGroupHeader ? 'pl-8' : ''
                       }`} style={{
                         width: '48px',
                         minWidth: '48px',

@@ -1129,6 +1129,125 @@ var generateFiltersFromData = (data, columns) => {
   });
   return filters;
 };
+var generateGroupingOptionsFromData = (data, columns) => {
+  if (data.length === 0) return [];
+  const groupableFields = [];
+  columns.forEach((column) => {
+    if (!column.enabled || !column.groupable) return;
+    const values = data.map((r) => r[column.key]).filter((v) => v != null);
+    const uniqueValues = [...new Set(values)];
+    if (uniqueValues.length >= 2 && uniqueValues.length <= Math.max(10, data.length / 5)) {
+      const firstValue = values[0];
+      if (typeof firstValue === "string" || typeof firstValue === "boolean") {
+        groupableFields.push(column.key);
+      }
+    }
+  });
+  return groupableFields.sort((a, b) => {
+    const priority = (field) => {
+      const lower = field.toLowerCase();
+      if (lower.includes("status")) return 1;
+      if (lower.includes("department")) return 2;
+      if (lower.includes("position") || lower.includes("role")) return 3;
+      if (lower.includes("type") || lower.includes("category")) return 4;
+      if (lower.includes("location")) return 5;
+      return 10;
+    };
+    return priority(a) - priority(b);
+  });
+};
+var detectDefaultGroupBy = (data, options) => {
+  if (options.length === 0) return null;
+  const statusField = options.find((field) => field.toLowerCase().includes("status"));
+  if (statusField) return statusField;
+  const deptField = options.find((field) => field.toLowerCase().includes("department"));
+  if (deptField) return deptField;
+  return options[0];
+};
+var parseGroupingConfig = (data, columns, config, showGroupingDropdown, groupingDropdownPosition, groupingOptions, defaultGroupBy) => {
+  if (config === false || config === void 0) {
+    return { enabled: false };
+  }
+  if (config === true || config === "auto") {
+    const autoOptions = generateGroupingOptionsFromData(data, columns);
+    const autoDefault = defaultGroupBy === "auto" ? detectDefaultGroupBy(data, autoOptions) : defaultGroupBy || detectDefaultGroupBy(data, autoOptions);
+    return {
+      enabled: autoOptions.length > 0,
+      showDropdown: showGroupingDropdown !== false,
+      position: groupingDropdownPosition || "toolbar",
+      options: groupingOptions === "auto" ? autoOptions : groupingOptions || autoOptions,
+      defaultGroupBy: autoDefault || void 0
+    };
+  }
+  return {
+    enabled: config.enabled,
+    showDropdown: config.showDropdown !== false,
+    position: config.position || "toolbar",
+    options: config.options || generateGroupingOptionsFromData(data, columns),
+    defaultGroupBy: config.defaultGroupBy || detectDefaultGroupBy(data, config.options || []),
+    summaryCalculator: config.summaryCalculator
+  };
+};
+var GroupingSelector = ({
+  groupingConfig,
+  columns,
+  currentGroupBy,
+  onGroupByChange,
+  expandAllGroups,
+  collapseAllGroups
+}) => {
+  if (!groupingConfig.enabled || !groupingConfig.showDropdown) return null;
+  const groupableColumns = columns.filter(
+    (col) => groupingConfig.options?.includes(col.key) || groupingConfig.options?.length === 0 && col.groupable !== false
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenu, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuTrigger, { asChild: true, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(Button, { variant: "outline", size: "sm", className: "flex items-center gap-2", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.Group, { className: "h-4 w-4" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { children: "Group By" }),
+      currentGroupBy && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Badge, { variant: "secondary", className: "text-xs", children: columns.find((col) => col.key === currentGroupBy)?.label || currentGroupBy }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.ChevronDown, { className: "h-4 w-4" })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuContent, { className: "w-56", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuLabel, { className: "text-xs", children: "Group data by column" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuSeparator, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+        DropdownMenuCheckboxItem,
+        {
+          checked: !currentGroupBy,
+          onCheckedChange: () => onGroupByChange(null),
+          children: "No Grouping"
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuSeparator, {}),
+      groupableColumns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+        DropdownMenuCheckboxItem,
+        {
+          checked: currentGroupBy === column.key,
+          onCheckedChange: (checked) => {
+            if (checked) {
+              onGroupByChange(column.key);
+            } else {
+              onGroupByChange(null);
+            }
+          },
+          children: column.label
+        },
+        column.key
+      )),
+      currentGroupBy && expandAllGroups && collapseAllGroups && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuSeparator, {}),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuItem, { onClick: expandAllGroups, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.ChevronDown, { className: "h-4 w-4 mr-2" }),
+          "Expand All Groups"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuItem, { onClick: collapseAllGroups, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.ChevronRight, { className: "h-4 w-4 mr-2" }),
+          "Collapse All Groups"
+        ] })
+      ] })
+    ] })
+  ] });
+};
 var EnhancedDataTable = ({
   tableId,
   data,
@@ -1159,6 +1278,13 @@ var EnhancedDataTable = ({
   rowActions,
   enableFullScreen = true,
   enableColumnConfiguration = true,
+  // New improved grouping API
+  grouping,
+  showGroupingDropdown,
+  groupingDropdownPosition,
+  groupingOptions,
+  defaultGroupBy,
+  // Legacy grouping API (backward compatibility)
   enableGrouping = false,
   groupBy = null,
   onGroupByChange,
@@ -1239,6 +1365,29 @@ var EnhancedDataTable = ({
   const [experimentalFrozenColumns, setExperimentalFrozenColumns] = (0, import_react3.useState)([]);
   const [freezeHeaderRow, setFreezeHeaderRow] = (0, import_react3.useState)(false);
   const [frozenRowIds, setFrozenRowIds] = (0, import_react3.useState)([]);
+  const groupingConfig = (0, import_react3.useMemo)(() => {
+    return parseGroupingConfig(
+      data,
+      columns,
+      grouping,
+      showGroupingDropdown,
+      groupingDropdownPosition,
+      groupingOptions,
+      defaultGroupBy
+    );
+  }, [data, columns, grouping, showGroupingDropdown, groupingDropdownPosition, groupingOptions, defaultGroupBy]);
+  const [internalGroupBy, setInternalGroupBy] = (0, import_react3.useState)(
+    groupingConfig.defaultGroupBy || null
+  );
+  const effectiveGroupBy = onGroupByChange ? groupBy : internalGroupBy;
+  const effectiveEnableGrouping = groupingConfig.enabled || enableGrouping;
+  const handleGroupByChange = (0, import_react3.useCallback)((newGroupBy) => {
+    if (onGroupByChange) {
+      onGroupByChange(newGroupBy);
+    } else {
+      setInternalGroupBy(newGroupBy);
+    }
+  }, [onGroupByChange]);
   const {
     groupedData,
     expandedGroups,
@@ -1248,8 +1397,8 @@ var EnhancedDataTable = ({
     groupCount
   } = useTableGrouping(
     data,
-    enableGrouping ? groupBy : null,
-    groupSummaryCalculator
+    effectiveEnableGrouping ? effectiveGroupBy : null,
+    groupingConfig.summaryCalculator || groupSummaryCalculator
   );
   const enabledColumns = (0, import_react3.useMemo)(() => columns.filter((col) => col.enabled).sort((a, b) => a.position - b.position), [columns]);
   const frozenColumns = (0, import_react3.useMemo)(() => {
@@ -1289,12 +1438,12 @@ var EnhancedDataTable = ({
     return `${columnWidth}px`;
   }, [isFullScreen, getColumnWidth, enableSelection, rowActions, enabledColumns.length, totalTableWidth]);
   const filteredData = (0, import_react3.useMemo)(() => {
-    const sourceData = enableGrouping ? groupedData : data;
+    const sourceData = effectiveEnableGrouping ? groupedData : data;
     return sourceData.filter((record) => {
-      if (enableGrouping && record.isGroupHeader) {
+      if (effectiveEnableGrouping && record.isGroupHeader) {
         return true;
       }
-      const recordToFilter = enableGrouping ? record.originalRecord || record : record;
+      const recordToFilter = effectiveEnableGrouping ? record.originalRecord || record : record;
       const matchesSearch = searchQuery === "" || effectiveSearchableFields.some(
         (field) => String(recordToFilter[field]).toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -1304,10 +1453,10 @@ var EnhancedDataTable = ({
       });
       return matchesSearch && matchesFilters;
     });
-  }, [data, groupedData, enableGrouping, searchQuery, effectiveSearchableFields, effectiveActiveFilters]);
+  }, [data, groupedData, effectiveEnableGrouping, searchQuery, effectiveSearchableFields, effectiveActiveFilters]);
   const sortedData = (0, import_react3.useMemo)(() => {
     if (!sortConfig.key) return filteredData;
-    if (enableGrouping) {
+    if (effectiveEnableGrouping) {
       return filteredData;
     }
     return [...filteredData].sort((a, b) => {
@@ -1317,14 +1466,14 @@ var EnhancedDataTable = ({
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filteredData, sortConfig, enableGrouping]);
+  }, [filteredData, sortConfig, effectiveEnableGrouping]);
   const totalPages = (0, import_react3.useMemo)(() => {
     const dataLength = sortedData.length;
     if (dataLength === 0) {
-      return enableGrouping ? 1 : 0;
+      return effectiveEnableGrouping ? 1 : 0;
     }
     return Math.ceil(dataLength / rowsPerPage);
-  }, [sortedData.length, rowsPerPage, enableGrouping]);
+  }, [sortedData.length, rowsPerPage, effectiveEnableGrouping]);
   const adjustedCurrentPage = (0, import_react3.useMemo)(() => {
     if (totalPages === 0) return 1;
     if (currentPage > totalPages) {
@@ -1538,11 +1687,11 @@ var EnhancedDataTable = ({
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { children: action.label })
       ] }, action.key)),
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuSeparator, {}),
-      enableGrouping && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuGroup, { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenu, { children: [
+      enableGrouping && !groupingConfig.enabled && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuGroup, { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenu, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuTrigger, { className: "flex items-center gap-2 w-full px-2 py-1.5 text-sm hover:bg-accent rounded-sm", children: [
           /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.Group, { className: "h-4 w-4" }),
           /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { children: "Group By" }),
-          groupBy && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Badge, { variant: "secondary", className: "ml-auto text-xs", children: enabledColumns.find((col) => col.key === groupBy)?.label || groupBy })
+          effectiveGroupBy && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Badge, { variant: "secondary", className: "ml-auto text-xs", children: enabledColumns.find((col) => col.key === effectiveGroupBy)?.label || effectiveGroupBy })
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuContent, { className: "w-56", side: "right", children: [
           /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuLabel, { className: "text-xs", children: "Group data by column" }),
@@ -1550,8 +1699,8 @@ var EnhancedDataTable = ({
           /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             DropdownMenuCheckboxItem,
             {
-              checked: !groupBy,
-              onCheckedChange: () => onGroupByChange?.(null),
+              checked: !effectiveGroupBy,
+              onCheckedChange: () => handleGroupByChange(null),
               children: "No Grouping"
             }
           ),
@@ -1559,19 +1708,19 @@ var EnhancedDataTable = ({
           enabledColumns.filter((column) => column.groupable !== false).map((column) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             DropdownMenuCheckboxItem,
             {
-              checked: groupBy === column.key,
+              checked: effectiveGroupBy === column.key,
               onCheckedChange: (checked) => {
                 if (checked) {
-                  onGroupByChange?.(column.key);
+                  handleGroupByChange(column.key);
                 } else {
-                  onGroupByChange?.(null);
+                  handleGroupByChange(null);
                 }
               },
               children: column.label
             },
             column.key
           )),
-          groupBy && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+          effectiveGroupBy && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
             /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(DropdownMenuSeparator, {}),
             /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(DropdownMenuItem, { onClick: expandAllGroups, children: [
               /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.ChevronDown, { className: "h-4 w-4 mr-2" }),
@@ -1617,13 +1766,57 @@ var EnhancedDataTable = ({
   ] });
   const fullScreenToggle = enableFullScreen && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(Button, { variant: "outline", onClick: () => setIsFullScreen(!isFullScreen), className: "gap-2", title: isFullScreen ? "Exit full screen" : "Enter full screen", children: isFullScreen ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.Minimize, { className: "h-4 w-4" }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_lucide_react6.Maximize, { className: "h-4 w-4" }) });
   const renderTableContent = () => /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex flex-col h-full", children: [
+    groupingConfig.position === "top" && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "flex-shrink-0 p-2 bg-white border-b border-gray-200", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      GroupingSelector,
+      {
+        groupingConfig,
+        columns: enabledColumns,
+        currentGroupBy: effectiveGroupBy,
+        onGroupByChange: handleGroupByChange,
+        expandAllGroups,
+        collapseAllGroups
+      }
+    ) }),
     /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex-shrink-0 space-y-4 bg-white", children: [
       CustomToolbar ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CustomToolbar, { selectedCount: selectionCount, searchBar, filtersButton, actionsDropdown, fullScreenToggle, columns, onColumnsChange: handleColumnsChange }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center justify-between p-1 bg-gray-50 border-b border-gray-200 gap-2", children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-4 mx-0 my-1", children: [
           actionsDropdown,
-          searchBar
+          searchBar,
+          groupingConfig.position === "next-to-filters" && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            GroupingSelector,
+            {
+              groupingConfig,
+              columns: enabledColumns,
+              currentGroupBy: effectiveGroupBy,
+              onGroupByChange: handleGroupByChange,
+              expandAllGroups,
+              collapseAllGroups
+            }
+          )
         ] }),
         /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "flex items-center gap-2", children: [
+          groupingConfig.position === "toolbar" && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            GroupingSelector,
+            {
+              groupingConfig,
+              columns: enabledColumns,
+              currentGroupBy: effectiveGroupBy,
+              onGroupByChange: handleGroupByChange,
+              expandAllGroups,
+              collapseAllGroups
+            }
+          ),
+          groupingConfig.position === "filters" && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            GroupingSelector,
+            {
+              groupingConfig,
+              columns: enabledColumns,
+              currentGroupBy: effectiveGroupBy,
+              onGroupByChange: handleGroupByChange,
+              expandAllGroups,
+              collapseAllGroups
+            }
+          ),
           filtersButton,
           fullScreenToggle
         ] })
@@ -1760,7 +1953,7 @@ var EnhancedDataTable = ({
         }) }),
         paginatedData.length > 0 ? paginatedData.filter((record) => !frozenRowIds.includes(record.id)).map((record) => {
           const typedRecord = record;
-          if (enableGrouping && typedRecord.isGroupHeader) {
+          if (effectiveEnableGrouping && typedRecord.isGroupHeader) {
             const totalColumns = (enableSelection ? 1 : 0) + enabledColumns.length + (rowActions ? 1 : 0);
             return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("tr", { className: "bg-gray-50 hover:bg-gray-100 border-b border-gray-200", children: [
               enableSelection && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { className: "sticky left-0 bg-gray-50 z-20 border-r border-gray-200 px-3 py-2", style: {
@@ -1820,8 +2013,8 @@ var EnhancedDataTable = ({
               )
             ] }, record.id);
           }
-          return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("tr", { className: `hover:bg-muted/50 border-b border-gray-100 cursor-pointer h-12 text-sm text-muted-foreground ${enableGrouping && !typedRecord.isGroupHeader ? "pl-4" : ""}`, onClick: () => onRowClick?.(record), children: [
-            enableSelection && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { className: `sticky left-0 bg-white z-20 border-r border-gray-200 px-3 ${enableGrouping && !typedRecord.isGroupHeader ? "pl-8" : ""}`, style: {
+          return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("tr", { className: `hover:bg-muted/50 border-b border-gray-100 cursor-pointer h-12 text-sm text-muted-foreground ${effectiveEnableGrouping && !typedRecord.isGroupHeader ? "pl-4" : ""}`, onClick: () => onRowClick?.(record), children: [
+            enableSelection && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("td", { className: `sticky left-0 bg-white z-20 border-r border-gray-200 px-3 ${effectiveEnableGrouping && !typedRecord.isGroupHeader ? "pl-8" : ""}`, style: {
               width: "48px",
               minWidth: "48px",
               maxWidth: "48px"
