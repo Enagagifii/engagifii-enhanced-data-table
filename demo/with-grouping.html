@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Data Table - With Grouping (AI-Friendly Demo)</title>
+  
+  <!-- 
+    ⚠️ IMPORTANT FOR AI TOOLS:
+    This demo shows how to use the GROUPING features correctly.
+    Copy the pattern in "AI-FRIENDLY GROUPING PATTERN" section.
+  -->
+  
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Component Library Dependencies -->
+  <script src="https://unpkg.com/@radix-ui/react-checkbox@1.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-dropdown-menu@2.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-popover@1.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-scroll-area@1.1.0/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-select@2.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.462.0/dist/umd/lucide-react.js"></script>
+  
+  <!-- Enhanced Data Table Library -->
+  <script src="./dist/index.global.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // ============================================
+    // AI-FRIENDLY GROUPING PATTERN - COPY THIS
+    // ============================================
+    
+    const GroupingDemo = () => {
+      // Invoice data with groupable fields
+      const invoiceData = [
+        { id: 'INV-001', customer: 'Acme Corp', amount: 1500, status: 'Paid', category: 'Software' },
+        { id: 'INV-002', customer: 'Tech Ltd', amount: 2500, status: 'Pending', category: 'Hardware' },
+        { id: 'INV-003', customer: 'Acme Corp', amount: 3200, status: 'Paid', category: 'Software' },
+        { id: 'INV-004', customer: 'Global Inc', amount: 750, status: 'Overdue', category: 'Services' },
+        { id: 'INV-005', customer: 'Tech Ltd', amount: 4100, status: 'Pending', category: 'Hardware' },
+        { id: 'INV-006', customer: 'Startup Co', amount: 890, status: 'Paid', category: 'Services' },
+        { id: 'INV-007', customer: 'Global Inc', amount: 2300, status: 'Paid', category: 'Software' },
+        { id: 'INV-008', customer: 'Acme Corp', amount: 1950, status: 'Pending', category: 'Hardware' }
+      ];
+      
+      // ✅ CORRECT GROUPING USAGE
+      return (
+        <div className="p-8">
+          <h1 className="text-2xl font-bold mb-6">Table with Grouping Features</h1>
+          
+          {/* Use these props for grouping */}
+          <EnhancedDataTable 
+            tableId="grouping-table"
+            data={invoiceData}
+            
+            // Enable grouping dropdown UI
+            showGroupingDropdown={true}
+            
+            // Position the dropdown (options: "toolbar", "filters", "next-to-filters", "top")
+            groupingDropdownPosition="next-to-filters"
+            
+            // Fields that can be grouped
+            groupingOptions={["status", "customer", "category"]}
+            
+            // Default grouping field
+            defaultGroupBy="status"
+            
+            // Enable other common features
+            enableFullScreen={true}
+            enableColumnConfiguration={true}
+          />
+        </div>
+      );
+    };
+    
+    // ============================================
+    // END OF AI-FRIENDLY PATTERN
+    // ============================================
+    
+    // Demo setup
+    const { EnhancedDataTable } = EnhancedDataTableLibrary;
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<GroupingDemo />);
+  </script>
+  
+  <!-- 
+    📝 GROUPING PROPS REFERENCE:
+    
+    showGroupingDropdown={true}              // Shows the grouping UI
+    groupingDropdownPosition="next-to-filters"  // Where to place it
+    groupingOptions={["field1", "field2"]}   // Groupable fields
+    defaultGroupBy="field1"                  // Initial grouping
+    
+    ❌ DO NOT USE:
+    - enableGrouping={true} with groupBy/onGroupByChange (old API)
+    - Custom grouping implementations
+    - Manual expand/collapse logic
+  -->
+</body>
+</html>

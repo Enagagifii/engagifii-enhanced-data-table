@@ -3,249 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enhanced Data Table - Package Demo Hub</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <title>Enhanced Data Table - Demo Directory</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div id="root"></div>
-  
-  <script type="text/babel">
-    const FeatureShowcase = () => {
-      return (
-        <div className="min-h-screen bg-gray-50 p-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-8 text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                🚀 Enhanced Data Table Package
-              </h1>
-              <p className="text-xl text-gray-600 mb-6">
-                Comprehensive, feature-rich data table component for React applications
-              </p>
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-8 text-white">
-                <h2 className="text-2xl font-bold mb-4">✨ Interactive Live Demo Available!</h2>
-                <p className="text-lg mb-6 text-blue-100">
-                  Experience ALL advanced features including column resizing, frozen columns, data grouping, 
-                  pagination, horizontal/vertical scrolling, fullscreen mode, smart filtering, bulk actions, 
-                  and custom cell rendering with comprehensive invoice data (250+ records).
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <a 
-                    href="./ultimate-demo.html" 
-                    className="inline-flex items-center px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg border-2 border-blue-600"
-                  >
-                    🚀 Ultimate Demo (Proper Architecture) →
-                  </a>
-                  <a 
-                    href="./proper-demo.html" 
-                    className="inline-flex items-center px-6 py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition-colors border border-green-400"
-                  >
-                    ✅ Component Library Demo →
-                  </a>
-                  <a 
-                    href="./grouping-demo.html" 
-                    className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
-                  >
-                    📊 Grouping Reference Demo →
-                  </a>
-                </div>
-                <p className="text-sm text-blue-200 mt-4">
-                  🚀 Ultimate Demo: Full feature showcase with proper architecture | ✅ Component Library: Built from actual source | 📊 Grouping Reference: Working grouping implementation
-                </p>
-              </div>
-            </div>
-
-            {/* Feature Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              
-              {/* Core Features */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">📊</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">Core Table Features</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>Frozen Columns:</strong> Keep important columns visible while scrolling</li>
-                  <li>✅ <strong>Header Freezing:</strong> Fixed header that stays on top</li>
-                  <li>✅ <strong>Horizontal/Vertical Scrolling:</strong> Perfect alignment</li>
-                  <li>✅ <strong>Dynamic Height:</strong> Adaptive table sizing</li>
-                  <li>✅ <strong>Column Resizing:</strong> User-adjustable column widths</li>
-                  <li>✅ <strong>Full-screen Mode:</strong> Maximize viewing area</li>
-                </ul>
-              </div>
-
-              {/* Data Management */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">🔍</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">Data Management</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>Advanced Filtering:</strong> Multi-select, searchable filters</li>
-                  <li>✅ <strong>Smart Search:</strong> Global search across multiple fields</li>
-                  <li>✅ <strong>Column Sorting:</strong> Ascending/descending sort</li>
-                  <li>✅ <strong>Data Grouping:</strong> Group by any column</li>
-                  <li>✅ <strong>Pagination:</strong> Configurable page sizes</li>
-                  <li>✅ <strong>Export/Import:</strong> CSV, Excel integration</li>
-                </ul>
-              </div>
-
-              {/* Interaction Features */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">⚡</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">User Interactions</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>Row Selection:</strong> Single/multi-row selection</li>
-                  <li>✅ <strong>Bulk Actions:</strong> Perform actions on selected rows</li>
-                  <li>✅ <strong>Custom Cell Rendering:</strong> Rich content in cells</li>
-                  <li>✅ <strong>Row Actions:</strong> Context menus and buttons</li>
-                  <li>✅ <strong>Column Configuration:</strong> Show/hide/reorder columns</li>
-                  <li>✅ <strong>Keyboard Navigation:</strong> Accessibility support</li>
-                </ul>
-              </div>
-
-              {/* Technical Features */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">⚙️</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">Technical Excellence</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>TypeScript Support:</strong> Full type safety</li>
-                  <li>✅ <strong>Performance Optimized:</strong> Virtual scrolling ready</li>
-                  <li>✅ <strong>Responsive Design:</strong> Mobile-friendly</li>
-                  <li>✅ <strong>Theme Customizable:</strong> Tailwind CSS integration</li>
-                  <li>✅ <strong>Event Handlers:</strong> Comprehensive callback system</li>
-                  <li>✅ <strong>Memory Efficient:</strong> Optimized rendering</li>
-                </ul>
-              </div>
-
-              {/* Integration */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">🔧</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">Easy Integration</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>NPM Package:</strong> Simple installation</li>
-                  <li>✅ <strong>Zero Dependencies:</strong> Self-contained</li>
-                  <li>✅ <strong>React 18+ Compatible:</strong> Latest React features</li>
-                  <li>✅ <strong>Tree Shakeable:</strong> Import only what you need</li>
-                  <li>✅ <strong>SSR Ready:</strong> Server-side rendering support</li>
-                  <li>✅ <strong>Test Coverage:</strong> Comprehensive test suite</li>
-                </ul>
-              </div>
-
-              {/* Documentation */}
-              <div className="bg-white rounded-lg p-6 shadow-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">📚</span>
-                  </div>
-                  <h3 className="text-lg font-semibold">Documentation & Support</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>✅ <strong>Comprehensive Guides:</strong> Step-by-step tutorials</li>
-                  <li>✅ <strong>API Documentation:</strong> Complete interface reference</li>
-                  <li>✅ <strong>Code Examples:</strong> Real-world use cases</li>
-                  <li>✅ <strong>Migration Guide:</strong> Easy upgrade path</li>
-                  <li>✅ <strong>Best Practices:</strong> Performance tips</li>
-                  <li>✅ <strong>Troubleshooting:</strong> Common issues solved</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Usage Example */}
-            <div className="bg-white rounded-lg p-6 shadow-md mb-8">
-              <h3 className="text-xl font-semibold mb-4">💻 Quick Start Example</h3>
-              <div className="bg-gray-100 rounded p-4 font-mono text-sm">
-                <div className="text-gray-600 mb-2">// Install the package</div>
-                <div className="text-blue-600 mb-4">npm install @engagifii/enhanced-data-table</div>
-                
-                <div className="text-gray-600 mb-2">// Import and use</div>
-                <div className="text-green-600">import { EnhancedDataTable } from '@engagifii/enhanced-data-table';</div>
-                <div className="mt-2">
-                  <div className="text-purple-600">&lt;EnhancedDataTable</div>
-                  <div className="text-blue-600 ml-4">data={employeeData}</div>
-                  <div className="text-blue-600 ml-4">columns={columnConfig}</div>
-                  <div className="text-blue-600 ml-4">enablePagination={true}</div>
-                  <div className="text-blue-600 ml-4">enableGrouping={true}</div>
-                  <div className="text-blue-600 ml-4">enableExport={true}</div>
-                  <div className="text-purple-600">/&gt;</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="text-center">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a 
-                  href="./ultimate-demo.html" 
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
-                >
-                  🎯 Try Ultimate Demo
-                </a>
-                <a 
-                  href="https://github.com/Engagifii/enhanced-data-table" 
-                  className="bg-gray-800 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors inline-block"
-                >
-                  📦 View on GitHub
-                </a>
-                <a 
-                  href="../README.md" 
-                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block"
-                >
-                  📚 Read Documentation
-                </a>
-              </div>
-            </div>
-
-            {/* Demo Instructions */}
-            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4 text-blue-900">🎯 What to Expect in the Demo:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-                <div>
-                  <h4 className="font-medium mb-2">Interactive Features:</h4>
-                  <ul className="space-y-1">
-                    <li>• Live data table with 200+ transaction records</li>
-                    <li>• Frozen columns (first 2 columns stay visible)</li>
-                    <li>• Column sorting by clicking headers</li>
-                    <li>• Global search across all data</li>
-                    <li>• Row selection with bulk operations</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Advanced Capabilities:</h4>
-                  <ul className="space-y-1">
-                    <li>• Pagination with configurable page sizes</li>
-                    <li>• Tab-based filtering by transaction type</li>
-                    <li>• Custom cell rendering for different data types</li>
-                    <li>• Responsive design that works on all devices</li>
-                    <li>• Full TypeScript integration and type safety</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+<body class="bg-gray-50">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Enhanced Data Table Demos</h1>
+    <p class="text-lg text-gray-600 mb-8">Choose a demo to see the component in action</p>
+    
+    <!-- AI Tools Notice -->
+    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6 mb-8">
+      <h2 class="text-lg font-semibold text-yellow-900 mb-2">📝 For AI Tools (Lovable, Claude, ChatGPT, Copilot)</h2>
+      <p class="text-yellow-800 mb-4">
+        These demos show the CORRECT way to use the EnhancedDataTable component.
+        Start with <strong>basic-usage.html</strong> for the simplest implementation.
+      </p>
+      <p class="text-yellow-800">
+        ⚠️ <strong>DO NOT</strong> use grouping-demo.html - it shows manual implementation which is incorrect.
+      </p>
+    </div>
+    
+    <!-- Demo Links -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Basic Usage -->
+      <a href="basic-usage.html" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">✅ Basic Usage</h3>
+        <p class="text-gray-600 mb-4">Simplest implementation with auto-configuration</p>
+        <div class="text-sm text-gray-500">
+          <code class="bg-gray-100 px-2 py-1 rounded">tableId + data + grouping="auto"</code>
+        </div>
+      </a>
+      
+      <!-- With Grouping -->
+      <a href="with-grouping.html" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">✅ With Grouping</h3>
+        <p class="text-gray-600 mb-4">Shows correct grouping feature usage</p>
+        <div class="text-sm text-gray-500">
+          <code class="bg-gray-100 px-2 py-1 rounded">showGroupingDropdown + groupingOptions</code>
+        </div>
+      </a>
+      
+      <!-- Full Features -->
+      <a href="full-features.html" class="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">✅ Full Features</h3>
+        <p class="text-gray-600 mb-4">All features enabled for complex use cases</p>
+        <div class="text-sm text-gray-500">
+          <code class="bg-gray-100 px-2 py-1 rounded">All Tier 2 props enabled</code>
+        </div>
+      </a>
+      
+      <!-- Legacy Demos -->
+      <div class="md:col-span-2 lg:col-span-3 mt-8">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">Legacy Demos (Not Recommended)</h3>
+        <div class="grid gap-4 md:grid-cols-3 opacity-50">
+          <a href="proper-demo.html" class="block bg-gray-100 rounded-lg p-4">
+            <h4 class="font-medium text-gray-600">proper-demo.html</h4>
+            <p class="text-sm text-gray-500">Original full implementation</p>
+          </a>
+          <a href="ultimate-demo.html" class="block bg-gray-100 rounded-lg p-4">
+            <h4 class="font-medium text-gray-600">ultimate-demo.html</h4>
+            <p class="text-sm text-gray-500">Similar to proper-demo</p>
+          </a>
+          <div class="block bg-red-50 border border-red-200 rounded-lg p-4">
+            <h4 class="font-medium text-red-700">❌ grouping-demo.html</h4>
+            <p class="text-sm text-red-600">Manual implementation - DO NOT USE</p>
           </div>
         </div>
-      );
-    };
+      </div>
+    </div>
     
-    ReactDOM.render(<FeatureShowcase />, document.getElementById('root'));
-  </script>
+    <!-- Quick Start -->
+    <div class="mt-12 bg-blue-50 rounded-lg p-6">
+      <h2 class="text-lg font-semibold text-blue-900 mb-4">Quick Start Code</h2>
+      <pre class="bg-white rounded p-4 overflow-x-auto"><code class="text-sm">import { EnhancedDataTable } from '@engagifii/enhanced-data-table';
+
+// Simplest usage
+&lt;EnhancedDataTable 
+  tableId="my-table"
+  data={yourData}  // Must have 'id' field
+  grouping="auto"
+/&gt;</code></pre>
+    </div>
+  </div>
 </body>
 </html>

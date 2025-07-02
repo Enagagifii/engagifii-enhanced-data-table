@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Data Table - Full Features (AI-Friendly Demo)</title>
+  
+  <!-- 
+    ⚠️ AI TOOLS: This shows ALL features enabled.
+    Most users only need a subset of these features.
+    Start with basic-usage.html for simpler cases.
+  -->
+  
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Component Library Dependencies -->
+  <script src="https://unpkg.com/@radix-ui/react-checkbox@1.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-dropdown-menu@2.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-popover@1.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-scroll-area@1.1.0/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@radix-ui/react-select@2.1.1/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.462.0/dist/umd/lucide-react.js"></script>
+  
+  <!-- Enhanced Data Table Library -->
+  <script src="./dist/index.global.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // ============================================
+    // AI-FRIENDLY FULL FEATURES PATTERN
+    // ============================================
+    
+    const FullFeaturesDemo = () => {
+      // Sample employee data
+      const employeeData = [
+        { 
+          id: 'EMP-001', 
+          name: 'John Doe', 
+          email: 'john.doe@company.com', 
+          department: 'Engineering',
+          position: 'Senior Developer',
+          status: 'Active',
+          salary: 95000,
+          joinDate: '2021-03-15'
+        },
+        { 
+          id: 'EMP-002', 
+          name: 'Jane Smith', 
+          email: 'jane.smith@company.com', 
+          department: 'Marketing',
+          position: 'Marketing Manager',
+          status: 'Active',
+          salary: 85000,
+          joinDate: '2020-07-22'
+        },
+        { 
+          id: 'EMP-003', 
+          name: 'Bob Johnson', 
+          email: 'bob.johnson@company.com', 
+          department: 'Engineering',
+          position: 'Junior Developer',
+          status: 'On Leave',
+          salary: 65000,
+          joinDate: '2022-01-10'
+        },
+        { 
+          id: 'EMP-004', 
+          name: 'Alice Brown', 
+          email: 'alice.brown@company.com', 
+          department: 'HR',
+          position: 'HR Director',
+          status: 'Active',
+          salary: 90000,
+          joinDate: '2019-11-05'
+        },
+        { 
+          id: 'EMP-005', 
+          name: 'Charlie Wilson', 
+          email: 'charlie.wilson@company.com', 
+          department: 'Sales',
+          position: 'Sales Executive',
+          status: 'Active',
+          salary: 75000,
+          joinDate: '2021-09-18'
+        },
+        { 
+          id: 'EMP-006', 
+          name: 'Diana Lee', 
+          email: 'diana.lee@company.com', 
+          department: 'Engineering',
+          position: 'Tech Lead',
+          status: 'Active',
+          salary: 110000,
+          joinDate: '2018-06-12'
+        }
+      ];
+      
+      // ✅ FULL FEATURES CONFIGURATION
+      return (
+        <div className="p-8">
+          <h1 className="text-2xl font-bold mb-6">Full-Featured Table - All Options Enabled</h1>
+          
+          <EnhancedDataTable 
+            tableId="full-features-table"
+            data={employeeData}
+            
+            // Auto-configuration
+            grouping="auto"
+            
+            // Grouping features
+            showGroupingDropdown={true}
+            groupingDropdownPosition="next-to-filters"
+            groupingOptions={["department", "status", "position"]}
+            defaultGroupBy="department"
+            
+            // All common features enabled
+            enableFullScreen={true}
+            enableColumnConfiguration={true}
+            enableSelection={true}
+            enableSelectAllPages={true}
+            
+            // Layout options
+            dynamicHeight={true}
+            minHeight={400}
+            maxHeight={800}
+            rowHeight={48}
+          />
+        </div>
+      );
+    };
+    
+    // ============================================
+    // END OF AI-FRIENDLY PATTERN
+    // ============================================
+    
+    // Demo setup
+    const { EnhancedDataTable } = EnhancedDataTableLibrary;
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<FullFeaturesDemo />);
+  </script>
+  
+  <!-- 
+    📝 FULL FEATURES CHECKLIST:
+    
+    ✅ Auto-configuration: grouping="auto"
+    ✅ Grouping UI: showGroupingDropdown + options
+    ✅ Fullscreen mode: enableFullScreen={true}
+    ✅ Column manager: enableColumnConfiguration={true}
+    ✅ Row selection: enableSelection={true}
+    ✅ Select all pages: enableSelectAllPages={true}
+    ✅ Dynamic height: dynamicHeight={true}
+    
+    💡 TIP: Start with fewer features and add as needed!
+  -->
+</body>
+</html>
