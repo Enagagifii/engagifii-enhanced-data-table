@@ -52523,13 +52523,21 @@ ${latestSubscriptionCallbackError.current.stack}
       setIsResizing(true);
       setResizingColumn(columnKey);
       resizeStartX.current = e.clientX;
-      resizeStartWidth.current = parseInt(getColumnWidth(columnKey)) || 140;
+      const currentWidth = getColumnWidth(columnKey);
+      resizeStartWidth.current = parseInt(currentWidth.replace("px", "")) || 140;
+      console.log("\u{1F527} Current width:", currentWidth, "Parsed:", resizeStartWidth.current);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
       const handleMouseMove = (moveEvent) => {
-        if (!columnKey) return;
+        if (!columnKey) {
+          console.log("\u{1F527} Mouse move without columnKey");
+          return;
+        }
+        moveEvent.preventDefault();
+        moveEvent.stopPropagation();
         const deltaX = moveEvent.clientX - resizeStartX.current;
         const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
+        console.log("\u{1F527} Resize move:", columnKey, "deltaX:", deltaX, "newWidth:", newWidth);
         const newWidths = {
           ...columnWidths,
           [columnKey]: `${newWidth}px`
@@ -52537,7 +52545,10 @@ ${latestSubscriptionCallbackError.current.stack}
         setColumnWidths(newWidths);
         onColumnWidthsChange?.(newWidths);
       };
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent) => {
+        console.log("\u{1F527} Resize end:", columnKey);
+        upEvent.preventDefault();
+        upEvent.stopPropagation();
         setIsResizing(false);
         setResizingColumn(null);
         document.removeEventListener("mousemove", handleMouseMove);
@@ -52872,7 +52883,7 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
+                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[100] pointer-events-auto ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
                 onMouseDown: (e) => {
                   console.log("\u{1F527} Frozen resize handle mousedown:", column.key);
                   e.stopPropagation();
@@ -52903,7 +52914,7 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
+                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[100] pointer-events-auto ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
                 onMouseDown: (e) => {
                   console.log("\u{1F527} Scrollable resize handle mousedown:", column.key);
                   e.stopPropagation();
