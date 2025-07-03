@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Column Resize Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .resize-test-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .resize-test-table th, .resize-test-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      position: relative;
+    }
+    .resize-test-table th {
+      background-color: #f2f2f2;
+    }
+    .resize-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 8px;
+      height: 100%;
+      background-color: rgba(59, 130, 246, 0.3);
+      cursor: col-resize;
+      z-index: 10;
+    }
+    .resize-handle:hover {
+      background-color: rgba(59, 130, 246, 0.5);
+    }
+    .resize-indicator {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      right: 1px;
+      width: 2px;
+      height: 20px;
+      background-color: #3b82f6;
+      opacity: 0.7;
+    }
+    .resize-indicator:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="p-8">
+  <h1 class="text-2xl font-bold mb-6">Column Resize Test</h1>
+  
+  <table class="resize-test-table">
+    <thead>
+      <tr>
+        <th style="width: 200px;">
+          Name
+          <div class="resize-handle">
+            <div class="resize-indicator"></div>
+          </div>
+        </th>
+        <th style="width: 150px;">
+          Email
+          <div class="resize-handle">
+            <div class="resize-indicator"></div>
+          </div>
+        </th>
+        <th style="width: 100px;">
+          Status
+          <div class="resize-handle">
+            <div class="resize-indicator"></div>
+          </div>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>John Doe</td>
+        <td>john@example.com</td>
+        <td>Active</td>
+      </tr>
+      <tr>
+        <td>Jane Smith</td>
+        <td>jane@example.com</td>
+        <td>Active</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <p class="mt-4 text-sm text-gray-600">
+    This is a simple test of the resize handle visibility and cursor behavior. 
+    Try hovering over the right edge of the column headers to see the resize handles.
+  </p>
+</body>
+</html>

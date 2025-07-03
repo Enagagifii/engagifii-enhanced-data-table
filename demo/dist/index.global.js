@@ -52867,7 +52867,7 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500 opacity-100" : "bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100"}`,
+                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
                 onMouseDown: (e) => {
                   console.log("\u{1F527} Frozen resize handle mousedown:", column.key);
                   e.stopPropagation();
@@ -52880,7 +52880,13 @@ ${latestSubscriptionCallbackError.current.stack}
                   e.preventDefault();
                 },
                 onMouseEnter: () => console.log("\u{1F527} Frozen resize handle hover:", column.key),
-                title: "Drag to resize column"
+                title: "Drag to resize column",
+                children: /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
+                  "div",
+                  {
+                    className: `absolute top-1/2 -translate-y-1/2 right-0 w-1 h-4 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-gray-400 opacity-60 hover:bg-blue-500 hover:opacity-100"}`
+                  }
+                )
               }
             )
           ] }, column.key)),
@@ -52892,7 +52898,7 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500 opacity-100" : "bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100"}`,
+                className: `absolute top-0 right-0 w-2 h-full cursor-col-resize transition-all duration-150 z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500/20" : "hover:bg-blue-400/20"}`,
                 onMouseDown: (e) => {
                   console.log("\u{1F527} Scrollable resize handle mousedown:", column.key);
                   e.stopPropagation();
@@ -52905,7 +52911,13 @@ ${latestSubscriptionCallbackError.current.stack}
                   e.preventDefault();
                 },
                 onMouseEnter: () => console.log("\u{1F527} Scrollable resize handle hover:", column.key),
-                title: "Drag to resize column"
+                title: "Drag to resize column",
+                children: /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
+                  "div",
+                  {
+                    className: `absolute top-1/2 -translate-y-1/2 right-0 w-1 h-4 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-gray-400 opacity-60 hover:bg-blue-500 hover:opacity-100"}`
+                  }
+                )
               }
             )
           ] }, column.key)),
