@@ -630,6 +630,7 @@ const rowActions = (record) => (
 | `defaultGroupBy` | `string` | auto-detected | Initial grouping field |
 | `enableFullScreen` | `boolean` | `false` | Enable fullscreen toggle |
 | `enableColumnConfiguration` | `boolean` | `false` | Enable column management |
+| `enableColumnResizing` | `boolean` | `true` | Enable column resizing |
 | `enableSelection` | `boolean` | `false` | Enable row selection |
 
 ### **Core Props (Auto-Generated if not provided)**
@@ -695,6 +696,7 @@ const rowActions = (record) => (
 |------|------|---------|-------------|
 | `enableFullScreen` | `boolean` | `false` | Enable fullscreen mode |
 | `enableColumnConfiguration` | `boolean` | `false` | Enable column management |
+| `enableColumnResizing` | `boolean` | `true` | Enable column resizing |
 | `dynamicHeight` | `boolean` | `false` | Auto-adjust table height |
 | `minHeight` | `number` | `200` | Minimum table height |
 | `maxHeight` | `number` | `600` | Maximum table height |

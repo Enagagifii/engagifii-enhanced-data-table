@@ -182,6 +182,7 @@ showGroupingDropdown={true}           // Show grouping UI
 enableFullScreen={true}                // Fullscreen button
 enableColumnConfiguration={true}       // Column manager
 enableSelection={true}                 // Row checkboxes
+enableColumnResizing={true}            // Column resizing (default: true)
 ```
 
 ### Tier 3: ADVANCED (Only when specifically asked)
