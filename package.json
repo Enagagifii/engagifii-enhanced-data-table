@@ -20,6 +20,10 @@
   "files": [
     "dist",
     "README.md",
+    "AI-FIRST-README.md",
+    "MIGRATION_GUIDE.md",
+    "CLAUDE.md",
+    "demo",
     "LICENSE"
   ],
   "scripts": {
