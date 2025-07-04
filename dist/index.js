@@ -1890,7 +1890,7 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400"}`,
+              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-10 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400"}`,
               style: { cursor: "col-resize" },
               onMouseDown: (e) => {
                 e.stopPropagation();
@@ -1913,7 +1913,7 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400"}`,
+              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-10 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400"}`,
               style: { cursor: "col-resize" },
               onMouseDown: (e) => {
                 e.stopPropagation();
