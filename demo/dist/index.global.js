@@ -52513,7 +52513,6 @@ ${latestSubscriptionCallbackError.current.stack}
       }, 10);
     }, []);
     const handleResizeStart = (0, import_react13.useCallback)((e, columnKey) => {
-      console.log("\u{1F527} \u{1F680} RESIZE START:", columnKey, "clientX:", e.clientX);
       e.preventDefault();
       e.stopPropagation();
       activeColumnKey.current = columnKey;
@@ -52522,10 +52521,8 @@ ${latestSubscriptionCallbackError.current.stack}
       resizeStartX.current = e.clientX;
       const currentWidth = getColumnWidth(columnKey);
       resizeStartWidth.current = parseInt(currentWidth.replace("px", "")) || 140;
-      console.log("\u{1F527} \u{1F4CF} Current width:", currentWidth, "Parsed:", resizeStartWidth.current);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
-      console.log("\u{1F527} \u2705 Resize initialized for:", columnKey);
     }, [getColumnWidth, setIsResizing, setResizingColumn]);
     const handleGlobalMouseMove = (0, import_react13.useCallback)((moveEvent) => {
       if (!isResizing || !activeColumnKey.current) {
@@ -52536,7 +52533,6 @@ ${latestSubscriptionCallbackError.current.stack}
       const columnKey = activeColumnKey.current;
       const deltaX = moveEvent.clientX - resizeStartX.current;
       const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
-      console.log("\u{1F527} \u{1F4CF} RESIZE MOVE:", columnKey, "deltaX:", deltaX, "newWidth:", newWidth);
       const newWidths = {
         ...columnWidths,
         [columnKey]: `${newWidth}px`
@@ -52548,7 +52544,6 @@ ${latestSubscriptionCallbackError.current.stack}
       if (!isResizing || !activeColumnKey.current) {
         return;
       }
-      console.log("\u{1F527} \u{1F3C1} RESIZE END:", activeColumnKey.current);
       upEvent.preventDefault();
       upEvent.stopPropagation();
       setIsResizing(false);
@@ -52891,24 +52886,23 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${isResizing && resizingColumn === column.key ? "bg-red-500 border-red-700" : "bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600"}`,
+                className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-transparent hover:bg-blue-100"}`,
                 onMouseDown: (e) => {
-                  console.log("\u{1F527} ULTRA Frozen resize handle mousedown:", column.key);
                   e.stopPropagation();
                   e.preventDefault();
                   handleResizeStart(e, column.key);
                 },
                 onClick: (e) => {
-                  console.log("\u{1F527} ULTRA Frozen resize handle click:", column.key);
                   e.stopPropagation();
                   e.preventDefault();
                 },
-                onMouseEnter: () => console.log("\u{1F527} ULTRA Frozen resize handle hover:", column.key),
-                title: "\u{1F525} RESIZE COLUMN - DRAG ME!",
-                style: {
-                  background: "linear-gradient(90deg, orange 0%, red 50%, orange 100%)",
-                  boxShadow: "0 0 4px rgba(255, 0, 0, 0.5)"
-                }
+                title: "Drag to resize column",
+                children: /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
+                  "div",
+                  {
+                    className: `absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-600" : "bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500"}`
+                  }
+                )
               }
             )
           ] }, column.key)),
@@ -52920,24 +52914,23 @@ ${latestSubscriptionCallbackError.current.stack}
             column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
               "div",
               {
-                className: `absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${isResizing && resizingColumn === column.key ? "bg-red-500 border-red-700" : "bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600"}`,
+                className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-transparent hover:bg-blue-100"}`,
                 onMouseDown: (e) => {
-                  console.log("\u{1F527} ULTRA Scrollable resize handle mousedown:", column.key);
                   e.stopPropagation();
                   e.preventDefault();
                   handleResizeStart(e, column.key);
                 },
                 onClick: (e) => {
-                  console.log("\u{1F527} ULTRA Scrollable resize handle click:", column.key);
                   e.stopPropagation();
                   e.preventDefault();
                 },
-                onMouseEnter: () => console.log("\u{1F527} ULTRA Scrollable resize handle hover:", column.key),
-                title: "\u{1F525} RESIZE COLUMN - DRAG ME!",
-                style: {
-                  background: "linear-gradient(90deg, orange 0%, red 50%, orange 100%)",
-                  boxShadow: "0 0 4px rgba(255, 0, 0, 0.5)"
-                }
+                title: "Drag to resize column",
+                children: /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(
+                  "div",
+                  {
+                    className: `absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-600" : "bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500"}`
+                  }
+                )
               }
             )
           ] }, column.key)),
