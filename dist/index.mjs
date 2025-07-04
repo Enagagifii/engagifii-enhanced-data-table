@@ -1793,7 +1793,7 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ jsx12(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-transparent hover:bg-blue-100"}`,
+              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-50 hover:bg-blue-50 border-r-2 border-gray-300 hover:border-blue-400"}`,
               onMouseDown: (e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -1803,13 +1803,7 @@ var EnhancedDataTable = ({
                 e.stopPropagation();
                 e.preventDefault();
               },
-              title: "Drag to resize column",
-              children: /* @__PURE__ */ jsx12(
-                "div",
-                {
-                  className: `absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-600" : "bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500"}`
-                }
-              )
+              title: "Drag to resize column"
             }
           )
         ] }, column.key)),
@@ -1821,7 +1815,7 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ jsx12(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-transparent hover:bg-blue-100"}`,
+              className: `absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-100 border-r-2 border-blue-500" : "bg-gray-50 hover:bg-blue-50 border-r-2 border-gray-300 hover:border-blue-400"}`,
               onMouseDown: (e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -1831,13 +1825,7 @@ var EnhancedDataTable = ({
                 e.stopPropagation();
                 e.preventDefault();
               },
-              title: "Drag to resize column",
-              children: /* @__PURE__ */ jsx12(
-                "div",
-                {
-                  className: `absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${isResizing && resizingColumn === column.key ? "bg-blue-600" : "bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500"}`
-                }
-              )
+              title: "Drag to resize column"
             }
           )
         ] }, column.key)),

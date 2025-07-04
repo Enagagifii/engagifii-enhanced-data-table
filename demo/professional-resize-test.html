@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Resize Handles Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .professional-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 8px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 100;
+      background-color: #f9fafb; /* bg-gray-50 */
+      border-right: 2px solid #d1d5db; /* border-gray-300 */
+      transition: all 0.2s;
+    }
+    
+    .professional-handle:hover {
+      background-color: #eff6ff; /* bg-blue-50 */
+      border-right: 2px solid #60a5fa; /* border-blue-400 */
+    }
+    
+    .professional-handle.active {
+      background-color: #dbeafe; /* bg-blue-100 */
+      border-right: 2px solid #3b82f6; /* border-blue-500 */
+    }
+    
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .test-table th {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #64748b;
+      min-width: 80px;
+    }
+    
+    .test-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      color: #334155;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg mb-8 text-center">
+      <h1 class="text-3xl font-bold mb-2">✨ Professional Resize Handles Test ✨</h1>
+      <p class="text-lg">Balanced visibility with professional appearance</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+      <h2 class="text-xl font-bold mb-4">Professional Handles - Always Visible</h2>
+      
+      <table class="test-table">
+        <thead>
+          <tr>
+            <th style="width: 200px;">
+              Name
+              <div class="professional-handle" title="Drag to resize column"></div>
+            </th>
+            <th style="width: 250px;">
+              Email
+              <div class="professional-handle" title="Drag to resize column"></div>
+            </th>
+            <th style="width: 150px;">
+              Department
+              <div class="professional-handle" title="Drag to resize column"></div>
+            </th>
+            <th style="width: 120px;">
+              Status
+              <div class="professional-handle" title="Drag to resize column"></div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>John Doe</td>
+            <td>john.doe@company.com</td>
+            <td>Engineering</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>Jane Smith</td>
+            <td>jane.smith@company.com</td>
+            <td>Marketing</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>Bob Johnson</td>
+            <td>bob.johnson@company.com</td>
+            <td>Sales</td>
+            <td>Inactive</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+      <h3 class="font-bold text-blue-800 mb-3">👀 What You Should See:</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-blue-700">
+        <div>
+          <strong>✅ Always Visible:</strong>
+          <ul class="list-disc ml-6 mt-2">
+            <li>💫 Light gray background strips on column edges</li>
+            <li>📏 Subtle gray borders (always present)</li>
+            <li>🎯 col-resize cursor on hover</li>
+            <li>📱 8px wide (easy to target)</li>
+          </ul>
+        </div>
+        <div>
+          <strong>🖱️ Professional Interactions:</strong>
+          <ul class="list-disc ml-6 mt-2">
+            <li>🔵 Light blue background on hover</li>
+            <li>🔷 Blue border highlight on hover</li>
+            <li>✨ Smooth 200ms transitions</li>
+            <li>🎨 Enterprise-grade aesthetics</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-4 p-3 bg-blue-100 rounded">
+        <strong>✅ Success Criteria:</strong><br>
+        You should see subtle gray strips that are clearly visible but not distracting.
+        They should turn light blue when you hover over them.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

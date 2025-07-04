@@ -1321,8 +1321,8 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                             <div
                               className={`absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500' 
-                                  : 'bg-transparent hover:bg-blue-100'
+                                  ? 'bg-blue-100 border-r-2 border-blue-500' 
+                                  : 'bg-gray-50 hover:bg-blue-50 border-r-2 border-gray-300 hover:border-blue-400'
                               }`}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -1334,16 +1334,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                 e.preventDefault();
                               }}
                               title="Drag to resize column"
-                            >
-                              {/* Subtle resize indicator */}
-                              <div
-                                className={`absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${
-                                  isResizing && resizingColumn === column.key 
-                                    ? 'bg-blue-600' 
-                                    : 'bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500'
-                                }`}
-                              />
-                            </div>
+                            />
                           )}
                         </th>)}
 
@@ -1360,8 +1351,8 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                             <div
                               className={`absolute inset-y-0 right-0 w-2 cursor-col-resize z-[100] transition-all duration-200 ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500' 
-                                  : 'bg-transparent hover:bg-blue-100'
+                                  ? 'bg-blue-100 border-r-2 border-blue-500' 
+                                  : 'bg-gray-50 hover:bg-blue-50 border-r-2 border-gray-300 hover:border-blue-400'
                               }`}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -1373,16 +1364,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                 e.preventDefault();
                               }}
                               title="Drag to resize column"
-                            >
-                              {/* Subtle resize indicator */}
-                              <div
-                                className={`absolute inset-y-0 right-0 w-0.5 transition-all duration-200 ${
-                                  isResizing && resizingColumn === column.key 
-                                    ? 'bg-blue-600' 
-                                    : 'bg-gray-300 opacity-40 group-hover:opacity-100 hover:bg-blue-500'
-                                }`}
-                              />
-                            </div>
+                            />
                           )}
                         </th>)}
 
