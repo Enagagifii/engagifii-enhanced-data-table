@@ -52358,6 +52358,7 @@ ${latestSubscriptionCallbackError.current.stack}
     const [resizingColumn, setResizingColumn] = (0, import_react13.useState)(null);
     const resizeStartX = (0, import_react13.useRef)(0);
     const resizeStartWidth = (0, import_react13.useRef)(0);
+    const activeColumnKey = (0, import_react13.useRef)(null);
     const [experimentalFrozenColumns, setExperimentalFrozenColumns] = (0, import_react13.useState)([]);
     const [freezeHeaderRow, setFreezeHeaderRow] = (0, import_react13.useState)(false);
     const [frozenRowIds, setFrozenRowIds] = (0, import_react13.useState)([]);
@@ -52512,48 +52513,60 @@ ${latestSubscriptionCallbackError.current.stack}
       }, 10);
     }, []);
     const handleResizeStart = (0, import_react13.useCallback)((e, columnKey) => {
-      console.log("\u{1F527} Resize start:", columnKey, "clientX:", e.clientX);
+      console.log("\u{1F527} \u{1F680} RESIZE START:", columnKey, "clientX:", e.clientX);
       e.preventDefault();
       e.stopPropagation();
+      activeColumnKey.current = columnKey;
       setIsResizing(true);
       setResizingColumn(columnKey);
       resizeStartX.current = e.clientX;
       const currentWidth = getColumnWidth(columnKey);
       resizeStartWidth.current = parseInt(currentWidth.replace("px", "")) || 140;
-      console.log("\u{1F527} Current width:", currentWidth, "Parsed:", resizeStartWidth.current);
+      console.log("\u{1F527} \u{1F4CF} Current width:", currentWidth, "Parsed:", resizeStartWidth.current);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
-      const handleMouseMove = (moveEvent) => {
-        if (!columnKey) {
-          console.log("\u{1F527} \u274C Mouse move without columnKey!");
-          return;
-        }
-        moveEvent.preventDefault();
-        moveEvent.stopPropagation();
-        const deltaX = moveEvent.clientX - resizeStartX.current;
-        const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
-        console.log("\u{1F527} \u2705 Resize move:", columnKey, "deltaX:", deltaX, "newWidth:", newWidth);
-        const newWidths = {
-          ...columnWidths,
-          [columnKey]: `${newWidth}px`
+      console.log("\u{1F527} \u2705 Resize initialized for:", columnKey);
+    }, [getColumnWidth, setIsResizing, setResizingColumn]);
+    const handleGlobalMouseMove = (0, import_react13.useCallback)((moveEvent) => {
+      if (!isResizing || !activeColumnKey.current) {
+        return;
+      }
+      moveEvent.preventDefault();
+      moveEvent.stopPropagation();
+      const columnKey = activeColumnKey.current;
+      const deltaX = moveEvent.clientX - resizeStartX.current;
+      const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
+      console.log("\u{1F527} \u{1F4CF} RESIZE MOVE:", columnKey, "deltaX:", deltaX, "newWidth:", newWidth);
+      const newWidths = {
+        ...columnWidths,
+        [columnKey]: `${newWidth}px`
+      };
+      setColumnWidths(newWidths);
+      onColumnWidthsChange?.(newWidths);
+    }, [isResizing, columnWidths, onColumnWidthsChange]);
+    const handleGlobalMouseUp = (0, import_react13.useCallback)((upEvent) => {
+      if (!isResizing || !activeColumnKey.current) {
+        return;
+      }
+      console.log("\u{1F527} \u{1F3C1} RESIZE END:", activeColumnKey.current);
+      upEvent.preventDefault();
+      upEvent.stopPropagation();
+      setIsResizing(false);
+      setResizingColumn(null);
+      activeColumnKey.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }, [isResizing, setIsResizing, setResizingColumn]);
+    (0, import_react13.useEffect)(() => {
+      if (isResizing) {
+        document.addEventListener("mousemove", handleGlobalMouseMove);
+        document.addEventListener("mouseup", handleGlobalMouseUp);
+        return () => {
+          document.removeEventListener("mousemove", handleGlobalMouseMove);
+          document.removeEventListener("mouseup", handleGlobalMouseUp);
         };
-        setColumnWidths(newWidths);
-        onColumnWidthsChange?.(newWidths);
-      };
-      const handleMouseUp = (upEvent) => {
-        console.log("\u{1F527} \u2705 Resize end:", columnKey);
-        upEvent.preventDefault();
-        upEvent.stopPropagation();
-        setIsResizing(false);
-        setResizingColumn(null);
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-      };
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    }, [getColumnWidth, columnWidths, onColumnWidthsChange]);
+      }
+    }, [isResizing, handleGlobalMouseMove, handleGlobalMouseUp]);
     const handleToggleFrozenColumn = (0, import_react13.useCallback)((columnKey, checked) => {
       setExperimentalFrozenColumns((prev) => {
         if (checked) {

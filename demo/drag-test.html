@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag Functionality Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .drag-handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 12px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 100;
+      background: linear-gradient(90deg, orange 0%, red 50%, orange 100%);
+      box-shadow: 0 0 4px rgba(255, 0, 0, 0.5);
+      border-right: 4px solid #ea580c;
+      transition: all 0.2s;
+    }
+    
+    .drag-handle:hover {
+      background: linear-gradient(90deg, red 0%, darkred 50%, red 100%);
+      border-right: 4px solid #dc2626;
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
+    }
+    
+    .drag-handle.dragging {
+      background: linear-gradient(90deg, darkred 0%, red 50%, darkred 100%);
+      box-shadow: 0 0 12px rgba(255, 0, 0, 1);
+    }
+    
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .test-table th {
+      position: relative;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #64748b;
+      min-width: 80px;
+    }
+    
+    .test-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      color: #334155;
+    }
+    
+    .log {
+      background: #1f2937;
+      color: #10b981;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 rounded-lg mb-8 text-center">
+      <h1 class="text-3xl font-bold mb-2">🧪 Drag Functionality Test 🧪</h1>
+      <p class="text-lg">Testing actual drag-to-resize mechanism</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+      <h2 class="text-xl font-bold mb-4">Test Table with Functional Drag Handlers</h2>
+      
+      <table class="test-table" id="testTable">
+        <thead>
+          <tr>
+            <th id="col1" style="width: 200px;">
+              Name
+              <div class="drag-handle" data-column="col1" title="🔥 DRAG TO RESIZE!"></div>
+            </th>
+            <th id="col2" style="width: 250px;">
+              Email
+              <div class="drag-handle" data-column="col2" title="🔥 DRAG TO RESIZE!"></div>
+            </th>
+            <th id="col3" style="width: 150px;">
+              Department
+              <div class="drag-handle" data-column="col3" title="🔥 DRAG TO RESIZE!"></div>
+            </th>
+            <th id="col4" style="width: 120px;">
+              Status
+              <div class="drag-handle" data-column="col4" title="🔥 DRAG TO RESIZE!"></div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>John Doe</td>
+            <td>john.doe@company.com</td>
+            <td>Engineering</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>Jane Smith</td>
+            <td>jane.smith@company.com</td>
+            <td>Marketing</td>
+            <td>Active</td>
+          </tr>
+          <tr>
+            <td>Bob Johnson</td>
+            <td>bob.johnson@company.com</td>
+            <td>Sales</td>
+            <td>Inactive</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="bg-gray-800 p-6 rounded-lg mb-8">
+      <h3 class="text-white font-bold mb-3">🔧 Debug Log:</h3>
+      <div class="log" id="debugLog">Ready to test drag functionality...\n</div>
+    </div>
+    
+    <div class="bg-blue-100 border-l-4 border-blue-500 p-6 rounded">
+      <h3 class="font-bold text-blue-800 mb-3">🧪 Test Instructions:</h3>
+      <ol class="list-decimal ml-6 text-blue-700 space-y-2">
+        <li>🖱️ <strong>Hover</strong> over the orange handles - they should turn red</li>
+        <li>🎯 <strong>Click and drag</strong> any handle left or right</li>
+        <li>📏 <strong>Watch</strong> the column width change in real-time</li>
+        <li>📝 <strong>Check</strong> the debug log for event information</li>
+        <li>✅ <strong>Success</strong> if columns resize smoothly</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    let isDragging = false;
+    let currentColumn = null;
+    let startX = 0;
+    let startWidth = 0;
+    
+    function log(message) {
+      const debugLog = document.getElementById('debugLog');
+      const timestamp = new Date().toLocaleTimeString();
+      debugLog.textContent += `[${timestamp}] ${message}\n`;
+      debugLog.scrollTop = debugLog.scrollHeight;
+    }
+    
+    function getColumnWidth(columnId) {
+      const column = document.getElementById(columnId);
+      return parseInt(window.getComputedStyle(column).width);
+    }
+    
+    function setColumnWidth(columnId, width) {
+      const column = document.getElementById(columnId);
+      column.style.width = Math.max(80, width) + 'px';
+      log(`✅ Set ${columnId} width to ${Math.max(80, width)}px`);
+    }
+    
+    // Add event listeners to all drag handles
+    document.querySelectorAll('.drag-handle').forEach(handle => {
+      handle.addEventListener('mouseenter', () => {
+        log(`🖱️ Hover on ${handle.dataset.column}`);
+      });
+      
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isDragging = true;
+        currentColumn = handle.dataset.column;
+        startX = e.clientX;
+        startWidth = getColumnWidth(currentColumn);
+        
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        
+        log(`🔧 DRAG START: ${currentColumn} at X:${startX}, width:${startWidth}px`);
+      });
+    });
+    
+    // Global mouse move handler
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging || !currentColumn) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const deltaX = e.clientX - startX;
+      const newWidth = startWidth + deltaX;
+      
+      setColumnWidth(currentColumn, newWidth);
+      log(`📏 DRAG MOVE: ${currentColumn} deltaX:${deltaX}, newWidth:${newWidth}px`);
+    });
+    
+    // Global mouse up handler
+    document.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      log(`🏁 DRAG END: ${currentColumn} - Final width: ${getColumnWidth(currentColumn)}px`);
+      
+      // Clean up
+      document.querySelectorAll('.drag-handle').forEach(h => h.classList.remove('dragging'));
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      
+      isDragging = false;
+      currentColumn = null;
+      startX = 0;
+      startWidth = 0;
+    });
+    
+    log('🚀 Drag test initialized - Try dragging the orange handles!');
+  </script>
+</body>
+</html>

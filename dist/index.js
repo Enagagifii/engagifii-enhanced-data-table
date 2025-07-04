@@ -1362,6 +1362,7 @@ var EnhancedDataTable = ({
   const [resizingColumn, setResizingColumn] = (0, import_react3.useState)(null);
   const resizeStartX = (0, import_react3.useRef)(0);
   const resizeStartWidth = (0, import_react3.useRef)(0);
+  const activeColumnKey = (0, import_react3.useRef)(null);
   const [experimentalFrozenColumns, setExperimentalFrozenColumns] = (0, import_react3.useState)([]);
   const [freezeHeaderRow, setFreezeHeaderRow] = (0, import_react3.useState)(false);
   const [frozenRowIds, setFrozenRowIds] = (0, import_react3.useState)([]);
@@ -1516,37 +1517,60 @@ var EnhancedDataTable = ({
     }, 10);
   }, []);
   const handleResizeStart = (0, import_react3.useCallback)((e, columnKey) => {
-    console.log("\u{1F527} Resize start:", columnKey, "clientX:", e.clientX);
+    console.log("\u{1F527} \u{1F680} RESIZE START:", columnKey, "clientX:", e.clientX);
     e.preventDefault();
     e.stopPropagation();
+    activeColumnKey.current = columnKey;
     setIsResizing(true);
     setResizingColumn(columnKey);
     resizeStartX.current = e.clientX;
-    resizeStartWidth.current = parseInt(getColumnWidth(columnKey)) || 140;
+    const currentWidth = getColumnWidth(columnKey);
+    resizeStartWidth.current = parseInt(currentWidth.replace("px", "")) || 140;
+    console.log("\u{1F527} \u{1F4CF} Current width:", currentWidth, "Parsed:", resizeStartWidth.current);
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
-    const handleMouseMove = (moveEvent) => {
-      if (!columnKey) return;
-      const deltaX = moveEvent.clientX - resizeStartX.current;
-      const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
-      const newWidths = {
-        ...columnWidths,
-        [columnKey]: `${newWidth}px`
+    console.log("\u{1F527} \u2705 Resize initialized for:", columnKey);
+  }, [getColumnWidth, setIsResizing, setResizingColumn]);
+  const handleGlobalMouseMove = (0, import_react3.useCallback)((moveEvent) => {
+    if (!isResizing || !activeColumnKey.current) {
+      return;
+    }
+    moveEvent.preventDefault();
+    moveEvent.stopPropagation();
+    const columnKey = activeColumnKey.current;
+    const deltaX = moveEvent.clientX - resizeStartX.current;
+    const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
+    console.log("\u{1F527} \u{1F4CF} RESIZE MOVE:", columnKey, "deltaX:", deltaX, "newWidth:", newWidth);
+    const newWidths = {
+      ...columnWidths,
+      [columnKey]: `${newWidth}px`
+    };
+    setColumnWidths(newWidths);
+    onColumnWidthsChange?.(newWidths);
+  }, [isResizing, columnWidths, onColumnWidthsChange]);
+  const handleGlobalMouseUp = (0, import_react3.useCallback)((upEvent) => {
+    if (!isResizing || !activeColumnKey.current) {
+      return;
+    }
+    console.log("\u{1F527} \u{1F3C1} RESIZE END:", activeColumnKey.current);
+    upEvent.preventDefault();
+    upEvent.stopPropagation();
+    setIsResizing(false);
+    setResizingColumn(null);
+    activeColumnKey.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }, [isResizing, setIsResizing, setResizingColumn]);
+  (0, import_react3.useEffect)(() => {
+    if (isResizing) {
+      document.addEventListener("mousemove", handleGlobalMouseMove);
+      document.addEventListener("mouseup", handleGlobalMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleGlobalMouseMove);
+        document.removeEventListener("mouseup", handleGlobalMouseUp);
       };
-      setColumnWidths(newWidths);
-      onColumnWidthsChange?.(newWidths);
-    };
-    const handleMouseUp = () => {
-      setIsResizing(false);
-      setResizingColumn(null);
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  }, [getColumnWidth, columnWidths, onColumnWidthsChange]);
+    }
+  }, [isResizing, handleGlobalMouseMove, handleGlobalMouseUp]);
   const handleToggleFrozenColumn = (0, import_react3.useCallback)((columnKey, checked) => {
     setExperimentalFrozenColumns((prev) => {
       if (checked) {
@@ -1871,20 +1895,24 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-gray-300 hover:bg-blue-400"}`,
+              className: `absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${isResizing && resizingColumn === column.key ? "bg-red-500 border-red-700" : "bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600"}`,
               onMouseDown: (e) => {
-                console.log("\u{1F527} Frozen resize handle mousedown:", column.key);
+                console.log("\u{1F527} ULTRA Frozen resize handle mousedown:", column.key);
                 e.stopPropagation();
                 e.preventDefault();
                 handleResizeStart(e, column.key);
               },
               onClick: (e) => {
-                console.log("\u{1F527} Frozen resize handle click:", column.key);
+                console.log("\u{1F527} ULTRA Frozen resize handle click:", column.key);
                 e.stopPropagation();
                 e.preventDefault();
               },
-              onMouseEnter: () => console.log("\u{1F527} Frozen resize handle hover:", column.key),
-              title: "Drag to resize column"
+              onMouseEnter: () => console.log("\u{1F527} ULTRA Frozen resize handle hover:", column.key),
+              title: "\u{1F525} RESIZE COLUMN - DRAG ME!",
+              style: {
+                background: "linear-gradient(90deg, orange 0%, red 50%, orange 100%)",
+                boxShadow: "0 0 4px rgba(255, 0, 0, 0.5)"
+              }
             }
           )
         ] }, column.key)),
@@ -1896,20 +1924,24 @@ var EnhancedDataTable = ({
           column.resizable !== false && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
             "div",
             {
-              className: `absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${isResizing && resizingColumn === column.key ? "bg-blue-500" : "bg-gray-300 hover:bg-blue-400"}`,
+              className: `absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${isResizing && resizingColumn === column.key ? "bg-red-500 border-red-700" : "bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600"}`,
               onMouseDown: (e) => {
-                console.log("\u{1F527} Scrollable resize handle mousedown:", column.key);
+                console.log("\u{1F527} ULTRA Scrollable resize handle mousedown:", column.key);
                 e.stopPropagation();
                 e.preventDefault();
                 handleResizeStart(e, column.key);
               },
               onClick: (e) => {
-                console.log("\u{1F527} Scrollable resize handle click:", column.key);
+                console.log("\u{1F527} ULTRA Scrollable resize handle click:", column.key);
                 e.stopPropagation();
                 e.preventDefault();
               },
-              onMouseEnter: () => console.log("\u{1F527} Scrollable resize handle hover:", column.key),
-              title: "Drag to resize column"
+              onMouseEnter: () => console.log("\u{1F527} ULTRA Scrollable resize handle hover:", column.key),
+              title: "\u{1F525} RESIZE COLUMN - DRAG ME!",
+              style: {
+                background: "linear-gradient(90deg, orange 0%, red 50%, orange 100%)",
+                boxShadow: "0 0 4px rgba(255, 0, 0, 0.5)"
+              }
             }
           )
         ] }, column.key)),

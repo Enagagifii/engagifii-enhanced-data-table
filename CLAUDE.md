@@ -121,3 +121,31 @@ The component is designed to be AI-friendly with:
 - `src/index.ts`: Main exports file
 - `demo/`: HTML demo files
 - `dist/`: Built files (committed to repo)
+
+
+
+# Use Playwright for webapp testing
+Playwright MCP is already installed on user level. Before starting a session, kill existing one if running any:
+```
+Bash(pkill -f "chrome" || true)
+```
+It is advisable, for testing the changes, first kill the existing ``npm run dev`` processes.
+```
+pkill -9 -f "npm run dev"
+```
+
+Following are the steps to test any functionality:
+- Kill existing npm processes
+- Kill existing chrome process
+- Run ``npm run dev &`` - run in background for nonblocking mode.
+- Open browser with Playwright with appropriate port
+- Test the actual functionality
+- Debug and fix any issues directly in the client app
+- Verify the integration works properly
+- After the completion of task, just close kill the chome and "npm run dev" process as stated above
+
+
+
+
+# Using Github cli
+Github cli ``gh`` is already installed. It can be used for Git related operations.

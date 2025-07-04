@@ -600,6 +600,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const resizeStartX = useRef<number>(0);
   const resizeStartWidth = useRef<number>(0);
+  const activeColumnKey = useRef<string | null>(null);
 
   // ====================== EXPERIMENTAL FREEZING STATE ======================
   const [experimentalFrozenColumns, setExperimentalFrozenColumns] = useState<string[]>([]);
@@ -829,54 +830,82 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
   // ====================== COLUMN RESIZING HANDLERS ======================
 
   const handleResizeStart = useCallback((e: React.MouseEvent, columnKey: string) => {
-    console.log('🔧 Resize start:', columnKey, 'clientX:', e.clientX);
+    console.log('🔧 🚀 RESIZE START:', columnKey, 'clientX:', e.clientX);
     e.preventDefault();
     e.stopPropagation();
+    
+    // Store the active column in a ref to avoid closure issues
+    activeColumnKey.current = columnKey;
     
     setIsResizing(true);
     setResizingColumn(columnKey);
     resizeStartX.current = e.clientX;
-    resizeStartWidth.current = parseInt(getColumnWidth(columnKey)) || 140;
-    
-    // console.log('🔧 Initial width:', resizeStartWidth.current);
+    const currentWidth = getColumnWidth(columnKey);
+    resizeStartWidth.current = parseInt(currentWidth.replace('px', '')) || 140;
+    console.log('🔧 📏 Current width:', currentWidth, 'Parsed:', resizeStartWidth.current);
     
     // Force update the cursor immediately
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     
-    // Add event listeners
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!columnKey) return;
+    console.log('🔧 ✅ Resize initialized for:', columnKey);
+  }, [getColumnWidth, setIsResizing, setResizingColumn]);
+
+  // Global mouse move handler - separate from resize start to avoid closure issues
+  const handleGlobalMouseMove = useCallback((moveEvent: MouseEvent) => {
+    if (!isResizing || !activeColumnKey.current) {
+      return;
+    }
+    
+    moveEvent.preventDefault();
+    moveEvent.stopPropagation();
+    
+    const columnKey = activeColumnKey.current;
+    const deltaX = moveEvent.clientX - resizeStartX.current;
+    const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
+    
+    console.log('🔧 📏 RESIZE MOVE:', columnKey, 'deltaX:', deltaX, 'newWidth:', newWidth);
+    
+    const newWidths = {
+      ...columnWidths,
+      [columnKey]: `${newWidth}px`
+    };
+    
+    setColumnWidths(newWidths);
+    onColumnWidthsChange?.(newWidths);
+  }, [isResizing, columnWidths, onColumnWidthsChange]);
+
+  // Global mouse up handler
+  const handleGlobalMouseUp = useCallback((upEvent: MouseEvent) => {
+    if (!isResizing || !activeColumnKey.current) {
+      return;
+    }
+    
+    console.log('🔧 🏁 RESIZE END:', activeColumnKey.current);
+    
+    upEvent.preventDefault();
+    upEvent.stopPropagation();
+    
+    setIsResizing(false);
+    setResizingColumn(null);
+    activeColumnKey.current = null;
+    
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, [isResizing, setIsResizing, setResizingColumn]);
+
+  // Attach global event listeners
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
       
-      const deltaX = moveEvent.clientX - resizeStartX.current;
-      const newWidth = Math.max(80, resizeStartWidth.current + deltaX);
-      
-      // console.log('🔧 Resize move:', columnKey, 'deltaX:', deltaX, 'newWidth:', newWidth);
-      
-      const newWidths = {
-        ...columnWidths,
-        [columnKey]: `${newWidth}px`
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
       };
-      
-      setColumnWidths(newWidths);
-      onColumnWidthsChange?.(newWidths);
-    };
-    
-    const handleMouseUp = () => {
-      // console.log('🔧 Resize end:', columnKey);
-      
-      setIsResizing(false);
-      setResizingColumn(null);
-      
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [getColumnWidth, columnWidths, onColumnWidthsChange]);
+    }
+  }, [isResizing, handleGlobalMouseMove, handleGlobalMouseUp]);
 
   const handleToggleFrozenColumn = useCallback((columnKey: string, checked: boolean) => {
     setExperimentalFrozenColumns(prev => {
@@ -1295,27 +1324,31 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                 {sortConfig.direction === 'asc' ? '↑' : '↓'}
                               </span>}
                           </div>
-                          {/* Resize handle */}
+                          {/* ULTRA-VISIBLE Resize handle */}
                           {(column.resizable !== false) && (
                             <div
-                              className={`absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${
+                              className={`absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500' 
-                                  : 'bg-gray-300 hover:bg-blue-400'
+                                  ? 'bg-red-500 border-red-700' 
+                                  : 'bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600'
                               }`}
                               onMouseDown={(e) => {
-                                console.log('🔧 Frozen resize handle mousedown:', column.key);
+                                console.log('🔧 ULTRA Frozen resize handle mousedown:', column.key);
                                 e.stopPropagation();
                                 e.preventDefault();
                                 handleResizeStart(e, column.key);
                               }}
                               onClick={(e) => {
-                                console.log('🔧 Frozen resize handle click:', column.key);
+                                console.log('🔧 ULTRA Frozen resize handle click:', column.key);
                                 e.stopPropagation();
                                 e.preventDefault();
                               }}
-                              onMouseEnter={() => console.log('🔧 Frozen resize handle hover:', column.key)}
-                              title="Drag to resize column"
+                              onMouseEnter={() => console.log('🔧 ULTRA Frozen resize handle hover:', column.key)}
+                              title="🔥 RESIZE COLUMN - DRAG ME!"
+                              style={{
+                                background: 'linear-gradient(90deg, orange 0%, red 50%, orange 100%)',
+                                boxShadow: '0 0 4px rgba(255, 0, 0, 0.5)'
+                              }}
                             />
                           )}
                         </th>)}
@@ -1328,27 +1361,31 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                 {sortConfig.direction === 'asc' ? '↑' : '↓'}
                               </span>}
                           </div>
-                          {/* Resize handle */}
+                          {/* ULTRA-VISIBLE Resize handle */}
                           {(column.resizable !== false) && (
                             <div
-                              className={`absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${
+                              className={`absolute inset-y-0 right-0 w-3 cursor-col-resize z-[100] border-r-4 ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500' 
-                                  : 'bg-gray-300 hover:bg-blue-400'
+                                  ? 'bg-red-500 border-red-700' 
+                                  : 'bg-orange-400 border-orange-600 hover:bg-red-400 hover:border-red-600'
                               }`}
                               onMouseDown={(e) => {
-                                console.log('🔧 Scrollable resize handle mousedown:', column.key);
+                                console.log('🔧 ULTRA Scrollable resize handle mousedown:', column.key);
                                 e.stopPropagation();
                                 e.preventDefault();
                                 handleResizeStart(e, column.key);
                               }}
                               onClick={(e) => {
-                                console.log('🔧 Scrollable resize handle click:', column.key);
+                                console.log('🔧 ULTRA Scrollable resize handle click:', column.key);
                                 e.stopPropagation();
                                 e.preventDefault();
                               }}
-                              onMouseEnter={() => console.log('🔧 Scrollable resize handle hover:', column.key)}
-                              title="Drag to resize column"
+                              onMouseEnter={() => console.log('🔧 ULTRA Scrollable resize handle hover:', column.key)}
+                              title="🔥 RESIZE COLUMN - DRAG ME!"
+                              style={{
+                                background: 'linear-gradient(90deg, orange 0%, red 50%, orange 100%)',
+                                boxShadow: '0 0 4px rgba(255, 0, 0, 0.5)'
+                              }}
                             />
                           )}
                         </th>)}
