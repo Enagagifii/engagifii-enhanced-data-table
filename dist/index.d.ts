@@ -100,7 +100,6 @@ interface DataTableConfig<T = DataTableRecord$1> {
     rowActions?: (record: T) => React__default.ReactNode;
     enableFullScreen?: boolean;
     enableColumnConfiguration?: boolean;
-    enableColumnResizing?: boolean;
     grouping?: boolean | 'auto' | GroupingConfig;
     showGroupingDropdown?: boolean;
     groupingDropdownPosition?: 'toolbar' | 'filters' | 'next-to-filters' | 'top';
@@ -120,7 +119,7 @@ interface DataTableConfig<T = DataTableRecord$1> {
     onColumnsChange?: (columns: DataTableColumn<T>[]) => void;
     onColumnWidthsChange?: (widths: Record<string, string>) => void;
 }
-declare const EnhancedDataTable: <T extends DataTableRecord$1 = DataTableRecord$1>({ tableId, data, columns: initialColumns, searchableFields, searchPlaceholder, filters, activeFilters, onFilterChange, onClearAllFilters, enableSelection, selectedRows, onSelectionChange, enableSelectAllPages, defaultSort, onSortChange, enablePagination, currentPage, rowsPerPage, onPageChange, onRowsPerPageChange, bulkActions, rowActions, enableFullScreen, enableColumnConfiguration, enableColumnResizing, grouping, showGroupingDropdown, groupingDropdownPosition, groupingOptions, defaultGroupBy, enableGrouping, groupBy, onGroupByChange, groupSummaryCalculator, dynamicHeight, minHeight, maxHeight, rowHeight, emptyState, customToolbar: CustomToolbar, onRowClick, onColumnsChange, onColumnWidthsChange }: DataTableConfig<T>) => react_jsx_runtime.JSX.Element;
+declare const EnhancedDataTable: <T extends DataTableRecord$1 = DataTableRecord$1>({ tableId, data, columns: initialColumns, searchableFields, searchPlaceholder, filters, activeFilters, onFilterChange, onClearAllFilters, enableSelection, selectedRows, onSelectionChange, enableSelectAllPages, defaultSort, onSortChange, enablePagination, currentPage, rowsPerPage, onPageChange, onRowsPerPageChange, bulkActions, rowActions, enableFullScreen, enableColumnConfiguration, grouping, showGroupingDropdown, groupingDropdownPosition, groupingOptions, defaultGroupBy, enableGrouping, groupBy, onGroupByChange, groupSummaryCalculator, dynamicHeight, minHeight, maxHeight, rowHeight, emptyState, customToolbar: CustomToolbar, onRowClick, onColumnsChange, onColumnWidthsChange }: DataTableConfig<T>) => react_jsx_runtime.JSX.Element;
 
 declare const SimpleDataTable: ({ data, columns }: {
     data: any[];

@@ -1298,10 +1298,10 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                           {/* Resize handle */}
                           {(column.resizable !== false) && (
                             <div
-                              className={`absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${
+                              className={`absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500 opacity-100' 
-                                  : 'bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100'
+                                  ? 'bg-blue-500' 
+                                  : 'bg-gray-300 hover:bg-blue-400'
                               }`}
                               onMouseDown={(e) => {
                                 console.log('🔧 Frozen resize handle mousedown:', column.key);
@@ -1331,10 +1331,10 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                           {/* Resize handle */}
                           {(column.resizable !== false) && (
                             <div
-                              className={`absolute top-1/2 -translate-y-1/2 right-0 w-0.5 h-6 cursor-col-resize transition-all duration-150 z-[70] ${
+                              className={`absolute inset-y-0 right-0 w-1 cursor-col-resize z-[70] ${
                                 isResizing && resizingColumn === column.key 
-                                  ? 'bg-blue-500 opacity-100' 
-                                  : 'bg-gray-300 opacity-50 hover:bg-blue-400 hover:opacity-100'
+                                  ? 'bg-blue-500' 
+                                  : 'bg-gray-300 hover:bg-blue-400'
                               }`}
                               onMouseDown={(e) => {
                                 console.log('🔧 Scrollable resize handle mousedown:', column.key);
