@@ -1,6 +1,6 @@
 {
   "name": "@engagifii/enhanced-data-table",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive, feature-rich data table component with advanced filtering, sorting, pagination, grouping, frozen columns, bulk actions, and custom cell rendering. Includes comprehensive demo showcasing all enterprise-grade features.",
   "private": false,
   "publishConfig": {
