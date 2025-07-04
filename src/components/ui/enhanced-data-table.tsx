@@ -1324,6 +1324,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                   ? 'bg-blue-100 border-r-2 border-blue-500' 
                                   : 'bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400'
                               }`}
+                              style={{ cursor: 'col-resize' }}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
@@ -1354,6 +1355,7 @@ const EnhancedDataTable = <T extends DataTableRecord = DataTableRecord,>({
                                   ? 'bg-blue-100 border-r-2 border-blue-500' 
                                   : 'bg-gray-100 hover:bg-blue-50 border-r-2 border-gray-400 hover:border-blue-400'
                               }`}
+                              style={{ cursor: 'col-resize' }}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
